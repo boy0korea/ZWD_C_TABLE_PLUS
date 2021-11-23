@@ -1,0 +1,116 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>ZCL_WD_C_TABLE_PLUS</CLSNAME>
+    <LANGU>E</LANGU>
+    <DESCRIPT>C_TABLE plus</DESCRIPT>
+    <STATE>1</STATE>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+   </VSEOCLASS>
+   <TPOOL>
+    <item>
+     <ID>I</ID>
+     <KEY>M08</KEY>
+     <ENTRY>Sort Ascending</ENTRY>
+     <LENGTH>30</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>M09</KEY>
+     <ENTRY>Sort Descending</ENTRY>
+     <LENGTH>30</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>M11</KEY>
+     <ENTRY>Export to Spreadsheet</ENTRY>
+     <LENGTH>60</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>S06</KEY>
+     <ENTRY>&amp;1 of &amp;2 matches</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>S07</KEY>
+     <ENTRY>&amp;1 matches</ENTRY>
+     <LENGTH>100</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>S08</KEY>
+     <ENTRY>&amp;1 match</ENTRY>
+     <LENGTH>100</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>S12</KEY>
+     <ENTRY>Search for</ENTRY>
+     <LENGTH>60</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>S13</KEY>
+     <ENTRY>Previous</ENTRY>
+     <LENGTH>60</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>S14</KEY>
+     <ENTRY>Next</ENTRY>
+     <LENGTH>60</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>S15</KEY>
+     <ENTRY>Cancel Search</ENTRY>
+     <LENGTH>60</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>S16</KEY>
+     <ENTRY>Search</ENTRY>
+     <LENGTH>60</LENGTH>
+    </item>
+   </TPOOL>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_WD_C_TABLE_PLUS</CLSNAME>
+     <CMPNAME>DISPATCH_EXPORT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>export</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_WD_C_TABLE_PLUS</CLSNAME>
+     <CMPNAME>DISPATCH_SORT_EVENT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>sort</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_WD_C_TABLE_PLUS</CLSNAME>
+     <CMPNAME>ON_DO_SEARCH</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>search</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_WD_C_TABLE_PLUS</CLSNAME>
+     <CMPNAME>ON_SEARCH_JUMP_TO_NEXT_HIT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>search</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_WD_C_TABLE_PLUS</CLSNAME>
+     <CMPNAME>UPGRADE_C_TABLE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>upgrade</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+  </asx:values>
+ </asx:abap>
+</abapGit>
