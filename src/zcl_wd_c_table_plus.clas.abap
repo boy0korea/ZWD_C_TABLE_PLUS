@@ -452,11 +452,11 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
     lt_column = mo_c_table->get_columns( ).
     LOOP AT lt_column INTO lo_column.
-      IF lo_column IS INSTANCE OF cl_wd_c_table_column_group.
+      IF lo_column->_cid EQ cl_wd_c_table_column_group=>cid_c_table_column_group.
         APPEND LINES OF CAST cl_wd_c_table_column_group( lo_column )->get_columns( ) TO lt_column.
         CONTINUE.
       ENDIF.
-      CHECK: lo_column IS INSTANCE OF cl_wd_c_table_column.
+      CHECK: lo_column->_cid EQ cl_wd_c_table_column=>cid_c_table_column.
 
       " menu
       lo_header_menu = CAST cl_wd_c_table_column( lo_column )->get_header_menu( ).
@@ -650,9 +650,9 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD dispatch_export.
-    DATA: lt_field2         TYPE zcl_abap2xlsx_helper=>tt_field,
-          lt_field          TYPE zcl_abap2xlsx_helper=>tt_field,
-          ls_field          TYPE zcl_abap2xlsx_helper=>ts_field,
+    DATA: lt_field2         TYPE za2xh_t_fieldcatalog,
+          lt_field          TYPE za2xh_t_fieldcatalog,
+          ls_field          TYPE za2xh_s_fieldcatalog,
           lo_node_info      TYPE REF TO if_wd_context_node_info,
           ls_column_mapping TYPE ty_s_column_mapping,
           lo_data_s_type    TYPE REF TO cl_abap_structdescr,
