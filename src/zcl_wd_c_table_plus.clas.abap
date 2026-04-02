@@ -1177,7 +1177,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
         design       = cl_wd_toolbar_button=>e_design-standard
         enabled      = abap_true
         image_first  = abap_true
-        image_source = if_fpm_constants_internal=>gc_image-search
+*        image_source = if_fpm_constants_internal=>gc_image-search
+        image_source = '~Icon/Search'
         tooltip      = |{ TEXT-s16 }|
         hotkey       = cl_wd_link_to_action=>e_hotkey-ctrl_f ).
       lo_toolbar->add_toolbar_right_item( lo_search_button ).
@@ -1294,7 +1295,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
     DATA lo_lnk_tc TYPE REF TO cl_wd_link_to_action.
     lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
                                   id           = lv_table_id && '___SEARCH_LEFT'
-                                  image_source = if_fpm_constants_internal=>gc_image-move_up
+*                                  image_source = if_fpm_constants_internal=>gc_image-move_up
+                                  image_source = '~Icon/MoveUp'
                                   tooltip      = |{ TEXT-s13 }|
                                   on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_LEFT'
                                   hotkey       = cl_wd_link_to_action=>e_hotkey-alt_arrow_up ).
@@ -1304,7 +1306,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
     lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
                                   id           = lv_table_id && '___SEARCH_RIGHT'
-                                  image_source = if_fpm_constants_internal=>gc_image-move_down
+*                                  image_source = if_fpm_constants_internal=>gc_image-move_down
+                                  image_source = '~Icon/MoveDown'
                                   tooltip      = |{ TEXT-s14 }|
                                   on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_RIGHT'
                                   hotkey       = cl_wd_link_to_action=>e_hotkey-alt_arrow_down ).
@@ -1315,7 +1318,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
     lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
                                   id           = lv_table_id && '___SEARCH_CLOSE'
-                                  image_source = if_fpm_constants_internal=>gc_image-cancel
+*                                  image_source = if_fpm_constants_internal=>gc_image-cancel
+                                  image_source = '~Icon/Cancel'
                                   tooltip      = |{ TEXT-s15 }|
                                   on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_CLOSE'
                                   hotkey       =  cl_wd_link_to_action=>e_hotkey-ctrl_shift_f ).  " '70'   ).   " ctrl-shift-f  "cl_wd_link_to_action=>e_hotkey-ctrl_shift_f
@@ -1332,7 +1336,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
       cl_wd_toolbar_button=>new_toolbar_button(
         EXPORTING
           id                       = lv_table_id && '___EXPORT'
-          image_source             = if_fpm_constants_internal=>gc_image-export_to_spreadsheet
+*          image_source             = if_fpm_constants_internal=>gc_image-export_to_spreadsheet
+          image_source             = '~Icon/ExportToSpreadsheet'
           on_action                = 'ZWD_C_TABLE_PLUS_EXPORT'
           tooltip                  = |{ TEXT-m11 }|
         RECEIVING
