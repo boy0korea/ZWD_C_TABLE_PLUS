@@ -1,11 +1,11 @@
-CLASS zcl_wd_c_table_plus DEFINITION
-  PUBLIC
-  CREATE PUBLIC .
+class ZCL_WD_C_TABLE_PLUS definition
+  public
+  create public .
 
-  PUBLIC SECTION.
+public section.
 
-    CONSTANTS:
-      BEGIN OF gc_search_state,
+  constants:
+    BEGIN OF gc_search_state,
         not_active     TYPE string        VALUE 'NOT_ACTIVE', " no search currently active
         active         TYPE string            VALUE 'ACTIVE', " means search is executed and search UI is visible
         to_be_executed TYPE string    VALUE 'TO_BE_EXECUTED', " search button has been just pressed
@@ -13,26 +13,28 @@ CLASS zcl_wd_c_table_plus DEFINITION
         jump_to_prev   TYPE string      VALUE 'JUMP_TO_PREV', " means jump to prev
       END OF gc_search_state .
 
-    CLASS-METHODS upgrade_c_table
-      IMPORTING
-        !io_view_api TYPE REF TO if_wd_view_controller
-        !io_c_table  TYPE REF TO cl_wd_c_table OPTIONAL .
-    METHODS constructor
-      IMPORTING
-        !io_c_table TYPE REF TO cl_wd_c_table .
-    METHODS on_do_search .
-    METHODS on_search_jump_to_next_hit
-      IMPORTING
-        !iv_search_direction_next TYPE abap_bool .
-    CLASS-METHODS get_instance
-      IMPORTING
-        !io_c_table        TYPE REF TO cl_wd_c_table
-      RETURNING
-        VALUE(ro_instance) TYPE REF TO zcl_wd_c_table_plus .
-    METHODS dispatch_sort_event
-      IMPORTING
-        !io_event TYPE REF TO cl_wd_custom_event OPTIONAL .
-    METHODS dispatch_export .
+  class-methods UPGRADE_C_TABLE
+    importing
+      !IO_VIEW_API type ref to IF_WD_VIEW_CONTROLLER
+      !IO_C_TABLE type ref to CL_WD_C_TABLE optional .
+  methods CONSTRUCTOR
+    importing
+      !IO_C_TABLE type ref to CL_WD_C_TABLE optional .
+  methods ON_OPEN_SEARCH .
+  methods ON_DO_SEARCH .
+  methods ON_SEARCH_JUMP_TO_NEXT_HIT
+    importing
+      !IV_SEARCH_DIRECTION_NEXT type ABAP_BOOL .
+  class-methods GET_INSTANCE
+    importing
+      !IO_C_TABLE type ref to CL_WD_C_TABLE
+    returning
+      value(RO_INSTANCE) type ref to ZCL_WD_C_TABLE_PLUS .
+  methods DISPATCH_SORT_EVENT
+    importing
+      !IO_EVENT type ref to CL_WD_CUSTOM_EVENT optional .
+  methods DISPATCH_EXPORT .
+  methods ON_SEARCH_CLOSE .
   PROTECTED SECTION.
 
     CLASS-METHODS readme .
@@ -246,6 +248,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
           lo_column_catalog TYPE REF TO if_salv_column_catalog,
           lo_usage          TYPE REF TO cl_wdr_component_usage.
 
+    CHECK: io_c_table IS NOT INITIAL.
+
     mv_search_state = gc_search_state-not_active.
     mo_c_table = io_c_table.
     mo_view = mo_c_table->view.
@@ -310,6 +314,15 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
       is_mandatory = abap_true ).
 
     DATA ls_attribute_info TYPE wdr_context_attribute_info.
+
+    " -------------------------------------------------------------------
+    " Attribute for visibility of search popin
+    " -------------------------------------------------------------------
+    ls_attribute_info-name = if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_open.
+    ls_attribute_info-type_name = 'ABAP_BOOL'.              "#EC NOTEXT
+    ls_attribute_info-rtti ?=
+      cl_abap_datadescr=>describe_by_name( 'ABAP_BOOL' ).
+    lo_table_props_node_info->add_attribute( ls_attribute_info ).
 
     " -------------------------------------------------------------------
     " Attribute for search string
@@ -983,9 +996,18 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
       lo_f ?= ls_wd_usage-usage->if_wd_component_usage~get_interface_controller( ).
       lo_f->set_view( io_view_api ).
       DATA(lt_vm) =  wdr_task=>application->get_component_for_id( ls_wd_usage-usage->child_component->id )->view_managers_for_window.
-      DATA(lo_vm) = lt_vm[ 1 ]-view_manager.
+      DATA(lo_vm) = lt_vm[ name = 'W_MAIN' ]-view_manager.
       lo_vm->window_info->set_is_dynamic( abap_true ).
       DATA(lo_v) = lo_vm->get_view( view_usage = lo_vm->window_info->default_root_vusage ).
+      CAST cl_wdr_view( io_view_api )->add_action(
+        EXPORTING
+          action  = NEW cl_wdr_action(
+          controller       = lo_v
+          text_key         = 'OPEN_SEARCH'
+          event_handler    = 'ONACTIONOPEN_SEARCH'
+        )
+          command = 'ZWD_C_TABLE_PLUS_OPEN_SEARCH'
+      ).
       CAST cl_wdr_view( io_view_api )->add_action(
         EXPORTING
           action  = NEW cl_wdr_action(
@@ -1012,6 +1034,15 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
           event_handler    = 'ONACTIONSEARCH_RIGHT'
         )
           command = 'ZWD_C_TABLE_PLUS_SEARCH_RIGHT'
+      ).
+      CAST cl_wdr_view( io_view_api )->add_action(
+        EXPORTING
+          action  = NEW cl_wdr_action(
+          controller       = lo_v
+          text_key         = 'SEARCH_CLOSE'
+          event_handler    = 'ONACTIONSEARCH_CLOSE'
+        )
+          command = 'ZWD_C_TABLE_PLUS_SEARCH_CLOSE'
       ).
       CAST cl_wdr_view( io_view_api )->add_action(
         EXPORTING
@@ -1121,6 +1152,9 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 *
 *endmethod.
 
+    DATA: lo_popin        TYPE REF TO cl_wd_popin,
+          lv_path         TYPE string,
+          lv_path_visible TYPE string.
     DATA: lv_table_id TYPE string,
           lo_toolbar  TYPE REF TO cl_wd_toolbar.
 
@@ -1135,31 +1169,52 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
       mo_c_table->set_toolbar( lo_toolbar ).
     ENDIF.
 
-*    DATA(lo_search_button) = cl_wd_toolbar_button=>new_toolbar_button(
-*      id           = `BTN_FPM_SEARCH`                       "#EC NOTEXT
-*      on_action    = `OPEN_SEARCH`                          "#EC NOTEXT
-*      design       = cl_wd_toolbar_button=>e_design-standard
-*      enabled      = abap_true
-*      image_first  = abap_true
-*      image_source = `~Icon/Log`                            "#EC NOTEXT
-*      tooltip      = |{ text-S16 }|
-*      hotkey       = cl_wd_link_to_action=>e_hotkey-ctrl_f ).
-*    lo_toolbar->add_toolbar_right_item( lo_search_button ).
+    IF 1 EQ 2.
+      " 기존 버튼 방식.
+      DATA(lo_search_button) = cl_wd_toolbar_button=>new_toolbar_button(
+        id           = lv_table_id && `___BTN_FPM_SEARCH`   "#EC NOTEXT
+        on_action    = `ZWD_C_TABLE_PLUS_OPEN_SEARCH`       "#EC NOTEXT
+        design       = cl_wd_toolbar_button=>e_design-standard
+        enabled      = abap_true
+        image_first  = abap_true
+        image_source = if_fpm_constants_internal=>gc_image-search
+        tooltip      = |{ TEXT-s16 }|
+        hotkey       = cl_wd_link_to_action=>e_hotkey-ctrl_f ).
+      lo_toolbar->add_toolbar_right_item( lo_search_button ).
+    ELSE.
+      lv_path  =
+              |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
+*        && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
+        && |{ mo_c_table->id }.|
+        && |{ if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_string }|.
+      lv_path_visible  =
+              |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
+*        && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
+        && |{ mo_c_table->id }.|
+        && |{ if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_open }:NOT|.
+      DATA(lo_open_search_if) = cl_wd_toolbar_input_field=>new_toolbar_input_field(
+        EXPORTING
+          bind_value                  = lv_path
+          bind_visible                = lv_path_visible
+          enabled                     = abap_true
+          id                          = lv_table_id && `___BTN_FPM_SEARCH` "#EC NOTEXT
+          label_text                  = |{ TEXT-s16 }|
+          on_enter                    = `ZWD_C_TABLE_PLUS_OPEN_SEARCH` "#EC NOTEXT
+      ).
+      lo_toolbar->add_toolbar_right_item( lo_open_search_if ).
+    ENDIF.
 
 
 
     " create popin
-    DATA: lo_popin        TYPE REF TO cl_wd_popin,
-          lv_path         TYPE string,
-          lv_path_visible TYPE string.
-*    lv_path  =
-*            |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
-**      && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
-*      && |{ mo_c_table->id }.|
-*      && |{ if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_open }| .
+    lv_path  =
+            |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
+*      && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
+      && |{ mo_c_table->id }.|
+      && |{ if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_open }| .
     lo_popin = cl_wd_popin=>new_popin( id = lv_table_id && '___POPIN_SEARCH'
-                                       has_content_padding = abap_false ).
-*                                       bind_visible = lv_path ).
+                                       has_content_padding = abap_false
+                                       bind_visible = lv_path ).
     lo_toolbar->set_toolbar_popin( the_toolbar_popin = lo_popin ).
 
     DATA lo_lc TYPE REF TO cl_wd_layout_container.
@@ -1239,7 +1294,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
     DATA lo_lnk_tc TYPE REF TO cl_wd_link_to_action.
     lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
                                   id           = lv_table_id && '___SEARCH_LEFT'
-                                  image_source = '~Icon/MoveUp'
+                                  image_source = if_fpm_constants_internal=>gc_image-move_up
                                   tooltip      = |{ TEXT-s13 }|
                                   on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_LEFT'
                                   hotkey       = cl_wd_link_to_action=>e_hotkey-alt_arrow_up ).
@@ -1249,7 +1304,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
     lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
                                   id           = lv_table_id && '___SEARCH_RIGHT'
-                                  image_source = '~Icon/MoveDown'
+                                  image_source = if_fpm_constants_internal=>gc_image-move_down
                                   tooltip      = |{ TEXT-s14 }|
                                   on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_RIGHT'
                                   hotkey       = cl_wd_link_to_action=>e_hotkey-alt_arrow_down ).
@@ -1258,34 +1313,32 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
     lo_tc->add_child( lo_lnk_tc ).
 *    ENDIF.
 
-*    lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
-*                                  id           = 'FPM_SEARCH_CLOSE'
-*                                  image_source = '~Icon/Cancel'
-*                                  tooltip      = |{ text-S15 }|
-*                                  on_action    = 'SEARCH_CLOSE'
-*                                  hotkey       =  cl_wd_link_to_action=>e_hotkey-ctrl_shift_f ).  " '70'   ).   " ctrl-shift-f  "cl_wd_link_to_action=>e_hotkey-ctrl_shift_f
-*    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lnk_tc
-*                                    cell_design = cl_wd_flow_data=>e_cell_design-l_pad  ).
-*    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_btn_tc
-*                                    cell_design = cl_wd_flow_data=>e_cell_design-l_pad  ).
-*    lo_tc->add_child( lo_lnk_tc ).
+    lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
+                                  id           = lv_table_id && '___SEARCH_CLOSE'
+                                  image_source = if_fpm_constants_internal=>gc_image-cancel
+                                  tooltip      = |{ TEXT-s15 }|
+                                  on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_CLOSE'
+                                  hotkey       =  cl_wd_link_to_action=>e_hotkey-ctrl_shift_f ).  " '70'   ).   " ctrl-shift-f  "cl_wd_link_to_action=>e_hotkey-ctrl_shift_f
+    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lnk_tc
+                                    cell_design = cl_wd_flow_data=>e_cell_design-l_pad  ).
+    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_btn_tc
+                                    cell_design = cl_wd_flow_data=>e_cell_design-l_pad  ).
+    lo_tc->add_child( lo_lnk_tc ).
 
 
     " excel export button
     IF zcl_abap2xlsx_helper=>is_abap2xlsx_installed( iv_with_message = abap_false ) EQ abap_true.
-      DATA lo_export_button TYPE REF TO cl_wd_button.
-      cl_wd_button=>new_button(
+      DATA lo_export_button TYPE REF TO cl_wd_toolbar_button.
+      cl_wd_toolbar_button=>new_toolbar_button(
         EXPORTING
           id                       = lv_table_id && '___EXPORT'
-          image_source             = '~Icon/SpreadsheetFile'
+          image_source             = if_fpm_constants_internal=>gc_image-export_to_spreadsheet
           on_action                = 'ZWD_C_TABLE_PLUS_EXPORT'
           tooltip                  = |{ TEXT-m11 }|
         RECEIVING
           control                  = lo_export_button
       ).
-      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_export_button
-                                    cell_design = cl_wd_flow_data=>e_cell_design-l_pad ).
-      lo_tc->add_child( lo_export_button ).
+      lo_toolbar->add_toolbar_right_item( lo_export_button ).
     ENDIF.
 
 
@@ -1498,5 +1551,50 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
         get_instance( CAST cl_wd_c_table( lo_uiel ) ).
       ENDLOOP.
     ENDIF.
+  ENDMETHOD.
+
+
+  METHOD on_open_search.
+*  method set_search_state.
+
+*    check mo_config_data->get_table_settings( )-allow_search is not initial.
+
+*    ms_search_settings-open_search = iv_search_open.
+    data lv_node_path type string.
+    lv_node_path = |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
+*      && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }|.
+      && |{ mo_c_table->id }|.
+
+    data lo_node type ref to if_wd_context_node.
+    lo_node = mo_context_root->path_get_node( lv_node_path ).
+
+    data lo_element type ref to if_wd_context_element.
+    lo_element = lo_node->get_element( ).
+    lo_element->set_attribute( name = if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_open
+                               value = abap_true ).
+
+*  endmethod.
+
+    on_do_search( ).
+  ENDMETHOD.
+
+
+  METHOD on_search_close.
+
+    DATA lv_node_path TYPE string.
+    lv_node_path = |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
+*      && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }|.
+      && |{ mo_c_table->id }|.
+
+    DATA lo_node TYPE REF TO if_wd_context_node.
+    lo_node = mo_context_root->path_get_node( lv_node_path ).
+
+    DATA lo_element TYPE REF TO if_wd_context_element.
+    lo_element = lo_node->get_element( ).
+    lo_element->set_attribute( name = if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_open
+                               value = abap_false ).
+
+    deactivate( ).
+
   ENDMETHOD.
 ENDCLASS.
