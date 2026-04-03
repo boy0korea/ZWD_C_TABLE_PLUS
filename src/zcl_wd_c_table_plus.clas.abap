@@ -38,130 +38,139 @@ public section.
   PROTECTED SECTION.
 
     CLASS-METHODS readme .
-  PRIVATE SECTION.
+private section.
 
-    TYPES:
-      BEGIN OF ty_s_instance,
+  types:
+    BEGIN OF ty_s_instance,
         c_table  TYPE REF TO cl_wd_c_table,
         instance TYPE REF TO zcl_wd_c_table_plus,
       END OF ty_s_instance .
-    TYPES:
-      ty_t_instance TYPE HASHED TABLE OF ty_s_instance WITH UNIQUE KEY c_table .
-    TYPES:
-      BEGIN OF ty_s_wd_usage,
+  types:
+    ty_t_instance TYPE HASHED TABLE OF ty_s_instance WITH UNIQUE KEY c_table .
+  types:
+    BEGIN OF ty_s_wd_usage,
         view  TYPE REF TO if_wd_view_controller,
         usage TYPE REF TO cl_wdr_component_usage,
       END OF ty_s_wd_usage .
-    TYPES:
-      ty_t_wd_usage TYPE HASHED TABLE OF ty_s_wd_usage WITH UNIQUE KEY view .
-    TYPES:
-      BEGIN OF ty_s_column_mapping,
+  types:
+    ty_t_wd_usage TYPE HASHED TABLE OF ty_s_wd_usage WITH UNIQUE KEY view .
+  types:
+    BEGIN OF ty_s_column_mapping,
         ui_column         TYPE REF TO cl_wd_c_table_column,
         ui_cell_editor_id TYPE string,
         table_field_name  TYPE string,
       END OF ty_s_column_mapping .
-    TYPES:
-      ty_t_column_mapping TYPE STANDARD TABLE OF ty_s_column_mapping .
+  types:
+    ty_t_column_mapping TYPE STANDARD TABLE OF ty_s_column_mapping .
 
-    CLASS-DATA gt_instance TYPE ty_t_instance .
-    CLASS-DATA gt_wd_usage TYPE ty_t_wd_usage .
-    CONSTANTS:
-      BEGIN OF gc_scroll_type,
+  class-data GT_INSTANCE type TY_T_INSTANCE .
+  class-data GT_WD_USAGE type TY_T_WD_USAGE .
+  constants:
+    BEGIN OF gc_scroll_type,
         jump_to_next        TYPE string VALUE 'JUMP_TO_NEXT', " means a node has been expanded/collapsed
         jump_to_prev        TYPE string VALUE 'JUMP_TO_PREV', " means a node has been expanded/collapsed
         jump_to_initial_hit TYPE string VALUE 'JUMP_TO_INITIAL_HIT', " means a node has been expanded/collapsed
       END OF gc_scroll_type .
-    DATA mv_search_state TYPE string .         " see gc_search_state
-    DATA mv_user_changed_data TYPE abap_bool .
-    DATA mo_toolbox TYPE REF TO cl_salv_sti_toolbox .
-    DATA mv_search_string TYPE string .
-    DATA mv_search_string_prev TYPE string .
-    DATA mt_toolbox_hits TYPE cl_salv_sti_toolbox=>yt_hit .
-    DATA mv_current_hit_idx TYPE i .
-    DATA mv_aux_index TYPE i .
-    DATA mv_update_frontend_necessary TYPE abap_bool .
-    DATA mo_rtti TYPE REF TO cl_abap_structdescr .
-    DATA mv_is_rtti_static TYPE flag .
-    DATA mo_c_table TYPE REF TO cl_wd_c_table .
-    DATA mo_view TYPE REF TO if_wd_view .
-    DATA mo_context_root TYPE REF TO if_wd_context_node .
-    DATA mo_parent_usage TYPE REF TO cl_wdr_component_usage .
-    DATA mt_column_mapping TYPE ty_t_column_mapping .
-    DATA:
-      mt_cell_editor_id TYPE TABLE OF string .
+  data MV_SEARCH_STATE type STRING .           " see gc_search_state
+  data MV_USER_CHANGED_DATA type ABAP_BOOL .
+  data MO_TOOLBOX type ref to CL_SALV_STI_TOOLBOX .
+  data MV_SEARCH_STRING type STRING .
+  data MV_SEARCH_STRING_PREV type STRING .
+  data MT_TOOLBOX_HITS type CL_SALV_STI_TOOLBOX=>YT_HIT .
+  data MV_CURRENT_HIT_IDX type I .
+  data MV_AUX_INDEX type I .
+  data MV_UPDATE_FRONTEND_NECESSARY type ABAP_BOOL .
+  data MO_RTTI type ref to CL_ABAP_STRUCTDESCR .
+  data MV_IS_RTTI_STATIC type FLAG .
+  data MO_C_TABLE type ref to CL_WD_C_TABLE .
+  data MO_VIEW type ref to IF_WD_VIEW .
+  data MO_CONTEXT_ROOT type ref to IF_WD_CONTEXT_NODE .
+  data MO_PARENT_USAGE type ref to CL_WDR_COMPONENT_USAGE .
+  data MT_COLUMN_MAPPING type TY_T_COLUMN_MAPPING .
+  data:
+    mt_cell_editor_id TYPE TABLE OF string .
+  data MV_SORT_COLUMN_NAME type STRING .
+  data MO_C_TABLE_CONTEXT type ref to IF_WD_CONTEXT_NODE .
 
-    CLASS-METHODS get_wd_usage
-      IMPORTING
-        !io_view_api       TYPE REF TO if_wd_view_controller
-      RETURNING
-        VALUE(ro_wd_usage) TYPE REF TO cl_wdr_component_usage .
-    METHODS create_mt_column_mapping .
-    METHODS on_delete
-        FOR EVENT component_deleted OF cl_wdr_component_usage .
-    METHODS get_search_string
-      RETURNING
-        VALUE(rv_search_string) TYPE string .
-    METHODS execute_search .
-    METHODS jump_to_next_hit .
-    METHODS jump_to_prev_hit .
-    METHODS deactivate .
-    METHODS get_search_state
-      RETURNING
-        VALUE(rv_state) TYPE string .
-    METHODS set_search_state
-      IMPORTING
-        !iv_search_state TYPE string .
-    METHODS set_user_changed_data .
-    METHODS get_first_visi_row
-      RETURNING
-        VALUE(rv_row_index) TYPE i .
-    METHODS get_last_visi_row
-      RETURNING
-        VALUE(rv_row_index) TYPE i .
-    METHODS update_first_visi_row
-      IMPORTING
-        !ir_current_hit TYPE REF TO cl_salv_sti_toolbox=>ys_hit
-        !iv_scroll_type TYPE string .
-    METHODS determine_first_hit .
-    METHODS determine_next_hit
-      IMPORTING
-        !iv_relative_to_row  TYPE i OPTIONAL
-      RETURNING
-        VALUE(rv_start_over) TYPE abap_bool .
-    METHODS determine_prev_hit
-      IMPORTING
-        !iv_relative_to_row  TYPE i OPTIONAL
-      RETURNING
-        VALUE(rv_start_over) TYPE abap_bool .
-    METHODS get_ref_of_current_hit
-      RETURNING
-        VALUE(rr_current_hit) TYPE REF TO cl_salv_sti_toolbox=>ys_hit .
-    METHODS trigger_search .
-    METHODS update_frontend
-      IMPORTING
-        !ir_current_hit      TYPE REF TO cl_salv_sti_toolbox=>ys_hit OPTIONAL
-        !iv_set_text_markers TYPE abap_bool .
-    METHODS clear_front_end .
-    METHODS get_text_markers
-      IMPORTING
-        !ir_current_hit  TYPE REF TO cl_salv_sti_toolbox=>ys_hit
-      EXPORTING
-        !et_text_markers TYPE wdui_c_table_text_markers .
-    METHODS configure_columns
-      IMPORTING
-        !io_column_catalog TYPE REF TO if_salv_column_catalog .
-    METHODS update_matches_string .
-    METHODS create_dynamic_node .
-    METHODS render_search_area .
-    METHODS get_new_search_string
-      RETURNING
-        VALUE(rv_search_string) TYPE string .
-    METHODS create_mo_rtti .
-    METHODS create_header_menu
-      IMPORTING
-        !iv_column_id  TYPE string
-      RETURNING
-        VALUE(ro_menu) TYPE REF TO cl_wd_menu .
+  methods ON_DATA_SOURCE_SET
+    for event ON_COLLECTION_CHANGED of CL_WDR_CONTEXT_NODE
+    importing
+      !CONTROLLER
+      !NODE
+      !NODE_NAME
+      !PROPERTY .
+  class-methods GET_WD_USAGE
+    importing
+      !IO_VIEW_API type ref to IF_WD_VIEW_CONTROLLER
+    returning
+      value(RO_WD_USAGE) type ref to CL_WDR_COMPONENT_USAGE .
+  methods CREATE_MT_COLUMN_MAPPING .
+  methods ON_DELETE
+    for event COMPONENT_DELETED of CL_WDR_COMPONENT_USAGE .
+  methods GET_SEARCH_STRING
+    returning
+      value(RV_SEARCH_STRING) type STRING .
+  methods EXECUTE_SEARCH .
+  methods JUMP_TO_NEXT_HIT .
+  methods JUMP_TO_PREV_HIT .
+  methods DEACTIVATE .
+  methods GET_SEARCH_STATE
+    returning
+      value(RV_STATE) type STRING .
+  methods SET_SEARCH_STATE
+    importing
+      !IV_SEARCH_STATE type STRING .
+  methods SET_USER_CHANGED_DATA .
+  methods GET_FIRST_VISI_ROW
+    returning
+      value(RV_ROW_INDEX) type I .
+  methods GET_LAST_VISI_ROW
+    returning
+      value(RV_ROW_INDEX) type I .
+  methods UPDATE_FIRST_VISI_ROW
+    importing
+      !IR_CURRENT_HIT type ref to CL_SALV_STI_TOOLBOX=>YS_HIT
+      !IV_SCROLL_TYPE type STRING .
+  methods DETERMINE_FIRST_HIT .
+  methods DETERMINE_NEXT_HIT
+    importing
+      !IV_RELATIVE_TO_ROW type I optional
+    returning
+      value(RV_START_OVER) type ABAP_BOOL .
+  methods DETERMINE_PREV_HIT
+    importing
+      !IV_RELATIVE_TO_ROW type I optional
+    returning
+      value(RV_START_OVER) type ABAP_BOOL .
+  methods GET_REF_OF_CURRENT_HIT
+    returning
+      value(RR_CURRENT_HIT) type ref to CL_SALV_STI_TOOLBOX=>YS_HIT .
+  methods TRIGGER_SEARCH .
+  methods UPDATE_FRONTEND
+    importing
+      !IR_CURRENT_HIT type ref to CL_SALV_STI_TOOLBOX=>YS_HIT optional
+      !IV_SET_TEXT_MARKERS type ABAP_BOOL .
+  methods CLEAR_FRONT_END .
+  methods GET_TEXT_MARKERS
+    importing
+      !IR_CURRENT_HIT type ref to CL_SALV_STI_TOOLBOX=>YS_HIT
+    exporting
+      !ET_TEXT_MARKERS type WDUI_C_TABLE_TEXT_MARKERS .
+  methods CONFIGURE_COLUMNS
+    importing
+      !IO_COLUMN_CATALOG type ref to IF_SALV_COLUMN_CATALOG .
+  methods UPDATE_MATCHES_STRING .
+  methods CREATE_DYNAMIC_NODE .
+  methods RENDER_SEARCH_AREA .
+  methods GET_NEW_SEARCH_STRING
+    returning
+      value(RV_SEARCH_STRING) type STRING .
+  methods CREATE_MO_RTTI .
+  methods CREATE_HEADER_MENU
+    importing
+      !IV_COLUMN_ID type STRING
+    returning
+      value(RO_MENU) type ref to CL_WD_MENU .
 ENDCLASS.
 
 
@@ -252,6 +261,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
     mv_search_state = gc_search_state-not_active.
     mo_c_table = io_c_table.
+    mo_c_table_context = mo_c_table->get_data_source( ).
     mo_view = mo_c_table->view.
     mo_context_root = mo_view->if_wd_controller~get_context( )->root_node.
 
@@ -278,6 +288,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
     create_dynamic_node( ).
     render_search_area( ).
+
+    SET HANDLER on_data_source_set.
   ENDMETHOD.
 
 
@@ -739,6 +751,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
         descending       = lv_sort_descending
     ).
 
+    mv_sort_column_name = lv_sort_column_name.
 
   ENDMETHOD.
 
@@ -1601,5 +1614,14 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
     deactivate( ).
 
+  ENDMETHOD.
+
+
+  METHOD on_data_source_set.
+* 검색 버튼을 눌러서 테이블 내용이 변경되는 경우 정렬표시를 제거함.
+    CHECK: mv_sort_column_name IS NOT INITIAL.
+    CHECK: node EQ mo_c_table_context.
+    CAST cl_wd_c_table_column( mo_c_table->get_column( id = mv_sort_column_name ) )->set_sort_state( value = cl_wd_c_table_column=>e_sort_state-none ).
+    CLEAR: mv_sort_column_name.
   ENDMETHOD.
 ENDCLASS.
