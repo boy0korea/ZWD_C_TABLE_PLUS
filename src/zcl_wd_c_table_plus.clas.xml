@@ -14,20 +14,56 @@
    <TPOOL>
     <item>
      <ID>I</ID>
-     <KEY>M08</KEY>
+     <KEY>R08</KEY>
      <ENTRY>Sort Ascending</ENTRY>
      <LENGTH>30</LENGTH>
     </item>
     <item>
      <ID>I</ID>
-     <KEY>M09</KEY>
+     <KEY>R09</KEY>
      <ENTRY>Sort Descending</ENTRY>
      <LENGTH>30</LENGTH>
     </item>
     <item>
      <ID>I</ID>
-     <KEY>M11</KEY>
-     <ENTRY>Export to Spreadsheet</ENTRY>
+     <KEY>R10</KEY>
+     <ENTRY>No link text available</ENTRY>
+     <LENGTH>40</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>R11</KEY>
+     <ENTRY>Export to Spreadsheet (XLSX)</ENTRY>
+     <LENGTH>60</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>R12</KEY>
+     <ENTRY>Search for</ENTRY>
+     <LENGTH>60</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>R13</KEY>
+     <ENTRY>Previous</ENTRY>
+     <LENGTH>60</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>R14</KEY>
+     <ENTRY>Next</ENTRY>
+     <LENGTH>60</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>R15</KEY>
+     <ENTRY>Cancel Search</ENTRY>
+     <LENGTH>60</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>R16</KEY>
+     <ENTRY>Search</ENTRY>
      <LENGTH>60</LENGTH>
     </item>
     <item>
@@ -48,36 +84,6 @@
      <ENTRY>&amp;1 match</ENTRY>
      <LENGTH>100</LENGTH>
     </item>
-    <item>
-     <ID>I</ID>
-     <KEY>S12</KEY>
-     <ENTRY>Search for</ENTRY>
-     <LENGTH>60</LENGTH>
-    </item>
-    <item>
-     <ID>I</ID>
-     <KEY>S13</KEY>
-     <ENTRY>Previous</ENTRY>
-     <LENGTH>60</LENGTH>
-    </item>
-    <item>
-     <ID>I</ID>
-     <KEY>S14</KEY>
-     <ENTRY>Next</ENTRY>
-     <LENGTH>60</LENGTH>
-    </item>
-    <item>
-     <ID>I</ID>
-     <KEY>S15</KEY>
-     <ENTRY>Cancel Search</ENTRY>
-     <LENGTH>60</LENGTH>
-    </item>
-    <item>
-     <ID>I</ID>
-     <KEY>S16</KEY>
-     <ENTRY>Search</ENTRY>
-     <LENGTH>60</LENGTH>
-    </item>
    </TPOOL>
    <I18N_TPOOL>
     <item>
@@ -85,69 +91,75 @@
      <TEXTPOOL>
       <item>
        <ID>I</ID>
-       <KEY>M08</KEY>
-       <ENTRY>Sort Ascending</ENTRY>
+       <KEY>R08</KEY>
+       <ENTRY>오름차순 정렬</ENTRY>
        <LENGTH>30</LENGTH>
       </item>
       <item>
        <ID>I</ID>
-       <KEY>M09</KEY>
-       <ENTRY>Sort Descending</ENTRY>
+       <KEY>R09</KEY>
+       <ENTRY>내림차순 정렬</ENTRY>
        <LENGTH>30</LENGTH>
       </item>
       <item>
        <ID>I</ID>
-       <KEY>M11</KEY>
-       <ENTRY>Export to Spreadsheet</ENTRY>
+       <KEY>R10</KEY>
+       <ENTRY>링크 텍스트를 사용할 수 없음</ENTRY>
+       <LENGTH>40</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>R11</KEY>
+       <ENTRY>스프레드시트로 엑스포트(XLSX)</ENTRY>
+       <LENGTH>60</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>R12</KEY>
+       <ENTRY>검색 대상</ENTRY>
+       <LENGTH>60</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>R13</KEY>
+       <ENTRY>이전</ENTRY>
+       <LENGTH>60</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>R14</KEY>
+       <ENTRY>다음</ENTRY>
+       <LENGTH>60</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>R15</KEY>
+       <ENTRY>검색 취소</ENTRY>
+       <LENGTH>60</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>R16</KEY>
+       <ENTRY>검색</ENTRY>
        <LENGTH>60</LENGTH>
       </item>
       <item>
        <ID>I</ID>
        <KEY>S06</KEY>
-       <ENTRY>&amp;1 of &amp;2 matches</ENTRY>
+       <ENTRY>&amp;1/&amp;2 일치</ENTRY>
        <LENGTH>20</LENGTH>
       </item>
       <item>
        <ID>I</ID>
        <KEY>S07</KEY>
-       <ENTRY>&amp;1 matches</ENTRY>
+       <ENTRY>&amp;1개 일치</ENTRY>
        <LENGTH>100</LENGTH>
       </item>
       <item>
        <ID>I</ID>
        <KEY>S08</KEY>
-       <ENTRY>&amp;1 match</ENTRY>
+       <ENTRY>&amp;1개 일치</ENTRY>
        <LENGTH>100</LENGTH>
-      </item>
-      <item>
-       <ID>I</ID>
-       <KEY>S12</KEY>
-       <ENTRY>Search for</ENTRY>
-       <LENGTH>60</LENGTH>
-      </item>
-      <item>
-       <ID>I</ID>
-       <KEY>S13</KEY>
-       <ENTRY>Previous</ENTRY>
-       <LENGTH>60</LENGTH>
-      </item>
-      <item>
-       <ID>I</ID>
-       <KEY>S14</KEY>
-       <ENTRY>Next</ENTRY>
-       <LENGTH>60</LENGTH>
-      </item>
-      <item>
-       <ID>I</ID>
-       <KEY>S15</KEY>
-       <ENTRY>Cancel Search</ENTRY>
-       <LENGTH>60</LENGTH>
-      </item>
-      <item>
-       <ID>I</ID>
-       <KEY>S16</KEY>
-       <ENTRY>Search</ENTRY>
-       <LENGTH>60</LENGTH>
       </item>
      </TEXTPOOL>
     </item>

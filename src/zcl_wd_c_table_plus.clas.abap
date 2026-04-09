@@ -179,6 +179,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD clear_front_end.
+*CL_FPM_TREE_ASSISTANCE
+
     DATA: lt_text_markers TYPE wdui_c_table_text_markers.
     mo_c_table->set_text_markers( lt_text_markers ).
     mv_update_frontend_necessary = abap_false.
@@ -186,6 +188,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD configure_columns.
+*CL_FPM_TREE_ASSISTANCE
+
     DATA: lt_salv_code_list    TYPE if_salv_service_types=>yt_codelist,
           ls_salv_code_list    LIKE LINE OF lt_salv_code_list,
           lv_salv_col_name     TYPE if_salv_service_types=>y_column_name,
@@ -294,6 +298,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD create_dynamic_node.
+*CL_FPM_TREE_RENDERING
+
     " -------------------------------------------------------------------
     " create node DYNAMIC.TABLE_PROPERTIES
     " -------------------------------------------------------------------
@@ -363,6 +369,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD create_header_menu.
+*CL_FPM_TREE_RENDERING
+
     DATA: lo_header_menu      TYPE REF TO cl_wd_menu,
           lo_view             TYPE REF TO if_wd_view,
           lo_menu_item        TYPE REF TO cl_wd_menu_item,
@@ -392,7 +400,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
       id              = |{ mo_c_table->id }___{ iv_column_id }_MNUAI_FPM_SORT_ASCENDING|
       needs_more_info = abap_false
       on_action       = 'ZWD_C_TABLE_PLUS_SORT'
-      text            = |{ TEXT-m08 }|
+      text            = |{ TEXT-r08 }|
       view            = lo_view
       visible         = abap_true ).
 
@@ -414,7 +422,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
       id              = |{ mo_c_table->id }___{ iv_column_id }_MNUAI_FPM_SORT_DESCENDING|
       needs_more_info = abap_false
       on_action       = 'ZWD_C_TABLE_PLUS_SORT'
-      text            = |{ TEXT-m09 }|
+      text            = |{ TEXT-r09 }|
       view            = lo_view
       visible         = abap_true ).
 
@@ -557,6 +565,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD deactivate.
+*CL_FPM_TREE_ASSISTANCE
+
     mv_search_state = gc_search_state-not_active.
     mv_current_hit_idx = 0.
     mv_user_changed_data = abap_false.
@@ -571,6 +581,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD determine_first_hit.
+*CL_FPM_TREE_ASSISTANCE
+
     DATA: lv_first_visi_row TYPE i.
     FIELD-SYMBOLS: <ty_s_hits>    TYPE cl_salv_sti_toolbox=>ys_hit.
     " first take care of the simple cases
@@ -605,6 +617,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD determine_next_hit.
+*CL_FPM_TREE_ASSISTANCE
+
     DATA: lv_index TYPE i.
     CHECK mv_current_hit_idx <> 0.
     IF lines( mt_toolbox_hits ) = 1.
@@ -640,6 +654,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD determine_prev_hit.
+*CL_FPM_TREE_ASSISTANCE
+
     DATA: lv_index TYPE i.
     CHECK mv_current_hit_idx <> 0.
     IF lines( mt_toolbox_hits ) = 1.
@@ -757,6 +773,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD execute_search.
+*CL_FPM_TREE_ASSISTANCE
+
     DATA: lr_current_hit TYPE REF TO cl_salv_sti_toolbox=>ys_hit,
           lr_prev_hit    TYPE REF TO cl_salv_sti_toolbox=>ys_hit,
           lv_temp_key    TYPE i,
@@ -901,6 +919,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD get_first_visi_row.
+*CL_FPM_TREE_ASSISTANCE
+
     DATA: lv_first_visi_row TYPE i.
     lv_first_visi_row = mo_c_table->get_first_visible_row( ).
     rv_row_index = lv_first_visi_row.
@@ -925,6 +945,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD get_last_visi_row.
+*CL_FPM_TREE_ASSISTANCE
+
     DATA: lv_first_visi_row TYPE i,
           visible_row_count TYPE i,
           lv_index          TYPE i.
@@ -936,6 +958,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD get_new_search_string.
+*CL_FPM_TREE_ASSISTANCE
 
     mo_context_root->get_child_node( if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic
 *    )->get_child_node( if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties
@@ -951,6 +974,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD get_ref_of_current_hit.
+*CL_FPM_TREE_ASSISTANCE
+
     FIELD-SYMBOLS: <ty_s_hits> TYPE cl_salv_sti_toolbox=>ys_hit.
     CHECK mv_current_hit_idx > 0.
     READ TABLE mt_toolbox_hits INDEX mv_current_hit_idx ASSIGNING <ty_s_hits>.
@@ -961,16 +986,22 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD get_search_state.
+*CL_FPM_TREE_ASSISTANCE
+
     rv_state = mv_search_state.
   ENDMETHOD.
 
 
   METHOD get_search_string.
+*CL_FPM_TREE_ASSISTANCE
+
     rv_search_string = mv_search_string.
   ENDMETHOD.
 
 
   METHOD get_text_markers.
+*CL_FPM_TREE_ASSISTANCE
+
     DATA: ls_text_marker TYPE wdui_c_table_text_marker.
     FIELD-SYMBOLS: <ty_s_hits> TYPE cl_salv_sti_toolbox=>ys_hit.
     CLEAR: et_text_markers.
@@ -1085,6 +1116,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD jump_to_next_hit.
+*CL_FPM_TREE_ASSISTANCE
+
     CHECK mv_search_state = gc_search_state-active.
     mv_search_state = gc_search_state-jump_to_next.
     mv_update_frontend_necessary = abap_true.
@@ -1092,6 +1125,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD jump_to_prev_hit.
+*CL_FPM_TREE_ASSISTANCE
+
     CHECK mv_search_state = gc_search_state-active.
     mv_search_state = gc_search_state-jump_to_prev.
     mv_update_frontend_necessary = abap_true.
@@ -1113,6 +1148,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD on_do_search.
+*CL_FPM_TREE_ASSISTANCE
     " ----------------------------------------------------------------
     " give the string to the search tool
     " ----------------------------------------------------------------
@@ -1123,6 +1159,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD on_search_jump_to_next_hit.
+*CL_FPM_TREE_ASSISTANCE
 
     IF get_search_state( ) = gc_search_state-active AND
        get_new_search_string( ) = get_search_string( ).
@@ -1141,10 +1178,13 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
   METHOD readme.
 * https://github.com/boy0korea/ZWD_C_TABLE_PLUS
+* copied from CL_FPM_TREE_ASSISTANCE & CL_FPM_TREE_RENDERING
   ENDMETHOD.
 
 
   METHOD render_search_area.
+*CL_FPM_TREE_RENDERING
+
 * 필요 ACTION 3개.
 *                        on_enter     = 'SEARCH_EXECUTE'
 *method onactionsearch_execute .
@@ -1192,7 +1232,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
         image_first  = abap_true
 *        image_source = if_fpm_constants_internal=>gc_image-search
         image_source = '~Icon/Search'
-        tooltip      = |{ TEXT-s16 }|
+        tooltip      = |{ TEXT-r16 }|
         hotkey       = cl_wd_link_to_action=>e_hotkey-ctrl_f ).
       lo_toolbar->add_toolbar_right_item( lo_search_button ).
     ELSE.
@@ -1212,7 +1252,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
           bind_visible                = lv_path_visible
           enabled                     = abap_true
           id                          = lv_table_id && `___BTN_FPM_SEARCH` "#EC NOTEXT
-          label_text                  = |{ TEXT-s16 }|
+          label_text                  = |{ TEXT-r16 }|
           on_enter                    = `ZWD_C_TABLE_PLUS_OPEN_SEARCH` "#EC NOTEXT
       ).
       lo_toolbar->add_toolbar_right_item( lo_open_search_if ).
@@ -1260,7 +1300,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
     lo_label ?= cl_wd_label=>new_label(
 *                        id           = 'FPM_SEARCH_STRING_LABEL'
                         editable     = abap_false
-                        text         = |{ TEXT-s12 }|
+                        text         = |{ TEXT-r12 }|
                         label_for    = lv_table_id && '___SEARCH_STRING'
                         wrapping     = abap_true ).
     DATA lo_inp_field TYPE REF TO cl_wd_input_field.
@@ -1268,7 +1308,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
                         id           = lv_table_id && '___SEARCH_STRING'
                         bind_value = lv_path
                         input_help = '03' "search
-                        " input_prompt = |{ text-S12 }|
+                        " input_prompt = |{ text-r12 }|
                         on_enter     = 'ZWD_C_TABLE_PLUS_SEARCH_EXECUTE'
                         width        = '12em' ).
 
@@ -1310,7 +1350,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
                                   id           = lv_table_id && '___SEARCH_LEFT'
 *                                  image_source = if_fpm_constants_internal=>gc_image-move_up
                                   image_source = '~Icon/MoveUp'
-                                  tooltip      = |{ TEXT-s13 }|
+                                  tooltip      = |{ TEXT-r13 }|
                                   on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_LEFT'
                                   hotkey       = cl_wd_link_to_action=>e_hotkey-alt_arrow_up ).
     cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lnk_tc
@@ -1321,7 +1361,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
                                   id           = lv_table_id && '___SEARCH_RIGHT'
 *                                  image_source = if_fpm_constants_internal=>gc_image-move_down
                                   image_source = '~Icon/MoveDown'
-                                  tooltip      = |{ TEXT-s14 }|
+                                  tooltip      = |{ TEXT-r14 }|
                                   on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_RIGHT'
                                   hotkey       = cl_wd_link_to_action=>e_hotkey-alt_arrow_down ).
     cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lnk_tc
@@ -1333,7 +1373,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
                                   id           = lv_table_id && '___SEARCH_CLOSE'
 *                                  image_source = if_fpm_constants_internal=>gc_image-cancel
                                   image_source = '~Icon/Cancel'
-                                  tooltip      = |{ TEXT-s15 }|
+                                  tooltip      = |{ TEXT-r15 }|
                                   on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_CLOSE'
                                   hotkey       =  cl_wd_link_to_action=>e_hotkey-ctrl_shift_f ).  " '70'   ).   " ctrl-shift-f  "cl_wd_link_to_action=>e_hotkey-ctrl_shift_f
     cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lnk_tc
@@ -1352,7 +1392,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 *          image_source             = if_fpm_constants_internal=>gc_image-export_to_spreadsheet
           image_source             = '~Icon/ExportToSpreadsheet'
           on_action                = 'ZWD_C_TABLE_PLUS_EXPORT'
-          tooltip                  = |{ TEXT-m11 }|
+          tooltip                  = |{ TEXT-r11 }|
         RECEIVING
           control                  = lo_export_button
       ).
@@ -1364,16 +1404,22 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD set_search_state.
+*CL_FPM_TREE_ASSISTANCE
+
     mv_search_state = iv_search_state.
   ENDMETHOD.
 
 
   METHOD set_user_changed_data.
+*CL_FPM_TREE_ASSISTANCE
+
     mv_user_changed_data = abap_true.
   ENDMETHOD.
 
 
   METHOD trigger_search.
+*CL_FPM_TREE_ASSISTANCE
+
     " call ats toolbox
     DATA: ls_column_mapping TYPE ty_s_column_mapping,
           lo_table_type     TYPE REF TO cl_abap_tabledescr,
@@ -1433,6 +1479,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD update_first_visi_row.
+*CL_FPM_TREE_ASSISTANCE
+
     DATA: lv_last_visi_row           TYPE i,
           lv_first_visi_row          TYPE i,
           lv_frontend_idx_of_current TYPE i,
@@ -1484,6 +1532,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD update_frontend.
+*CL_FPM_TREE_ASSISTANCE
+
     DATA: lv_index TYPE i.
 
     " take care of focus
@@ -1507,6 +1557,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD update_matches_string.
+*CL_FPM_TREE_ASSISTANCE
 
     DATA: lo_nd           TYPE REF TO if_wd_context_node,
           lo_el           TYPE REF TO if_wd_context_element,
@@ -1573,20 +1624,21 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD on_open_search.
+*CL_FPM_TREE_RENDERING
 *  method set_search_state.
 
 *    check mo_config_data->get_table_settings( )-allow_search is not initial.
 
 *    ms_search_settings-open_search = iv_search_open.
-    data lv_node_path type string.
+    DATA lv_node_path TYPE string.
     lv_node_path = |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
 *      && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }|.
       && |{ mo_c_table->id }|.
 
-    data lo_node type ref to if_wd_context_node.
+    DATA lo_node TYPE REF TO if_wd_context_node.
     lo_node = mo_context_root->path_get_node( lv_node_path ).
 
-    data lo_element type ref to if_wd_context_element.
+    DATA lo_element TYPE REF TO if_wd_context_element.
     lo_element = lo_node->get_element( ).
     lo_element->set_attribute( name = if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_open
                                value = abap_true ).
@@ -1598,6 +1650,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD on_search_close.
+*CL_FPM_TREE_RENDERING
 
     DATA lv_node_path TYPE string.
     lv_node_path = |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
