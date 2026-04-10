@@ -17,6 +17,16 @@ public section.
     importing
       !IO_VIEW_API type ref to IF_WD_VIEW_CONTROLLER
       !IO_C_TABLE type ref to CL_WD_C_TABLE optional .
+  class-methods CREATE_INSTANCE
+    importing
+      !IO_C_TABLE type ref to CL_WD_C_TABLE
+    returning
+      value(RO_INSTANCE) type ref to ZCL_WD_C_TABLE_PLUS .
+  class-methods GET_INSTANCE
+    importing
+      !IO_C_TABLE type ref to CL_WD_C_TABLE
+    returning
+      value(RO_INSTANCE) type ref to ZCL_WD_C_TABLE_PLUS .
   methods CONSTRUCTOR
     importing
       !IO_C_TABLE type ref to CL_WD_C_TABLE optional .
@@ -25,11 +35,6 @@ public section.
   methods ON_SEARCH_JUMP_TO_NEXT_HIT
     importing
       !IV_SEARCH_DIRECTION_NEXT type ABAP_BOOL .
-  class-methods GET_INSTANCE
-    importing
-      !IO_C_TABLE type ref to CL_WD_C_TABLE
-    returning
-      value(RO_INSTANCE) type ref to ZCL_WD_C_TABLE_PLUS .
   methods DISPATCH_SORT_EVENT
     importing
       !IO_EVENT type ref to CL_WD_CUSTOM_EVENT optional .
@@ -927,7 +932,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD get_instance.
+  METHOD GET_INSTANCE.
     DATA: ls_instance TYPE ty_s_instance.
 
     READ TABLE gt_instance INTO ls_instance WITH KEY c_table = io_c_table.
@@ -1610,14 +1615,15 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD upgrade_c_table.
+* WDDOMODIFYVIEW 에서 호출하세요.
     get_wd_usage( io_view_api ).
 
     IF io_c_table IS NOT INITIAL.
-      get_instance( io_c_table ).
+      create_instance( io_c_table ).
     ELSE.
       DATA(lt_uiel) = CAST cl_wdr_view( io_view_api )->get_elements_by_cid( cl_wd_c_table=>cid_c_table ).
       LOOP AT lt_uiel INTO DATA(lo_uiel).
-        get_instance( CAST cl_wd_c_table( lo_uiel ) ).
+        create_instance( CAST cl_wd_c_table( lo_uiel ) ).
       ENDLOOP.
     ENDIF.
   ENDMETHOD.
@@ -1676,5 +1682,26 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
     CHECK: node EQ mo_c_table_context.
     CAST cl_wd_c_table_column( mo_c_table->get_column( id = mv_sort_column_name ) )->set_sort_state( value = cl_wd_c_table_column=>e_sort_state-none ).
     CLEAR: mv_sort_column_name.
+  ENDMETHOD.
+
+
+  METHOD CREATE_INSTANCE.
+    DATA: ls_instance TYPE ty_s_instance.
+    READ TABLE gt_instance INTO ls_instance WITH KEY c_table = io_c_table.
+    IF sy-subrc EQ 0.
+      DELETE gt_instance WHERE c_table = io_c_table.
+      ls_instance-instance->mo_context_root->get_child_node( if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic )->get_node_info( )->remove_child_node( io_c_table->id ).
+      DATA(lo_tb) = io_c_table->get_toolbar( ).
+      DATA(lt_tb_item) = lo_tb->get_toolbar_right_items( ).
+      LOOP AT lt_tb_item INTO DATA(lo_tb_item).
+        DATA(lo_el) = CAST cl_wd_uielement( lo_tb_item ).
+        IF lo_el->id CP |{ io_c_table->id }___*|.
+          lo_tb->remove_toolbar_right_item( id = lo_el->id ).
+        ENDIF.
+      ENDLOOP.
+      DATA lo_popin TYPE REF TO cl_wd_popin.
+      lo_tb->set_toolbar_popin( the_toolbar_popin = lo_popin ).
+    ENDIF.
+    ro_instance = get_instance( io_c_table ).
   ENDMETHOD.
 ENDCLASS.
