@@ -1678,6 +1678,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
   METHOD on_data_source_set.
 * 검색 버튼을 눌러서 테이블 내용이 변경되는 경우 정렬표시를 제거함.
+    on_search_close( ).
     CHECK: mv_sort_column_name IS NOT INITIAL.
     CHECK: node EQ mo_c_table_context.
     CAST cl_wd_c_table_column( mo_c_table->get_column( id = mv_sort_column_name ) )->set_sort_state( value = cl_wd_c_table_column=>e_sort_state-none ).
