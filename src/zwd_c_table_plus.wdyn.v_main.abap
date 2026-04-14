@@ -35,7 +35,7 @@ ENDMETHOD.
 
 METHOD onactionsearch_left .
 *  wd_assist->on_search_jump_to_next_hit( iv_search_direction_next = abap_false ).
-  get_zcl_wd_c_table_plus( id )->on_search_jump_to_next_hit( iv_search_direction_next = abap_true ).
+  get_zcl_wd_c_table_plus( id )->on_search_jump_to_next_hit( iv_search_direction_next = abap_false ).
 ENDMETHOD.
 
 METHOD onactionsearch_right .
