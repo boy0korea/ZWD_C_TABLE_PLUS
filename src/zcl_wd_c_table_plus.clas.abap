@@ -509,10 +509,12 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
       CHECK: lo_column->_cid EQ cl_wd_c_table_column=>cid_c_table_column.
 
       " menu
-      lo_header_menu = CAST cl_wd_c_table_column( lo_column )->get_header_menu( ).
-      IF lo_header_menu IS INITIAL.
-        lo_header_menu = create_header_menu( lo_column->id ).
-        CAST cl_wd_c_table_column( lo_column )->set_header_menu( lo_header_menu ).
+      IF ms_setup-sort_off EQ abap_false.
+        lo_header_menu = CAST cl_wd_c_table_column( lo_column )->get_header_menu( ).
+        IF lo_header_menu IS INITIAL.
+          lo_header_menu = create_header_menu( lo_column->id ).
+          CAST cl_wd_c_table_column( lo_column )->set_header_menu( lo_header_menu ).
+        ENDIF.
       ENDIF.
 
       CLEAR: ls_column_mapping, lv_value_path.
@@ -1202,31 +1204,16 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
   METHOD render_search_area.
 *CL_FPM_TREE_RENDERING
 
-* 필요 ACTION 3개.
-*                        on_enter     = 'SEARCH_EXECUTE'
-*method onactionsearch_execute .
-*
-*  wd_assist->on_do_search( ).
-*
-*endmethod.
-*                                  on_action    = 'SEARCH_LEFT'
-*method onactionsearch_left.
-*
-*  wd_assist->on_search_jump_to_next_hit( iv_search_direction_next = abap_false ).
-*
-*endmethod.
-*                                  on_action    = 'SEARCH_RIGHT'
-*method onactionsearch_right.
-*
-*  wd_assist->on_search_jump_to_next_hit( iv_search_direction_next = abap_true ).
-*
-*endmethod.
-
     DATA: lo_popin        TYPE REF TO cl_wd_popin,
           lv_path         TYPE string,
-          lv_path_visible TYPE string.
-    DATA: lv_table_id TYPE string,
-          lo_toolbar  TYPE REF TO cl_wd_toolbar.
+          lv_path_visible TYPE string,
+          lv_table_id     TYPE string,
+          lo_toolbar      TYPE REF TO cl_wd_toolbar.
+
+    IF ms_setup-find_off EQ abap_true AND
+       ms_setup-export_off EQ abap_true.
+      RETURN.
+    ENDIF.
 
     lv_table_id = mo_c_table->id.
     lo_toolbar = mo_c_table->get_toolbar( ).
@@ -1239,183 +1226,193 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
       mo_c_table->set_toolbar( lo_toolbar ).
     ENDIF.
 
-    IF 1 EQ 2.
-      " 기존 버튼 방식.
-      DATA(lo_search_button) = cl_wd_toolbar_button=>new_toolbar_button(
-        id           = lv_table_id && `___BTN_FPM_SEARCH`   "#EC NOTEXT
-        on_action    = `ZWD_C_TABLE_PLUS_OPEN_SEARCH`       "#EC NOTEXT
-        design       = cl_wd_toolbar_button=>e_design-standard
-        enabled      = abap_true
-        image_first  = abap_true
-*        image_source = if_fpm_constants_internal=>gc_image-search
-        image_source = '~Icon/Search'
-        tooltip      = |{ TEXT-r16 }|
-        hotkey       = cl_wd_link_to_action=>e_hotkey-ctrl_f ).
-      lo_toolbar->add_toolbar_right_item( lo_search_button ).
-    ELSE.
+
+    IF ms_setup-export_off EQ abap_false.
+      " excel export button
+      IF zcl_abap2xlsx_helper=>is_abap2xlsx_installed( iv_with_message = abap_false ) EQ abap_true.
+        DATA lo_export_button TYPE REF TO cl_wd_toolbar_button.
+        cl_wd_toolbar_button=>new_toolbar_button(
+          EXPORTING
+            id                       = lv_table_id && '___EXPORT'
+*            image_source             = if_fpm_constants_internal=>gc_image-export_to_spreadsheet
+            image_source             = '~Icon/ExportToSpreadsheet'
+            on_action                = 'ZWD_C_TABLE_PLUS_EXPORT'
+            tooltip                  = |{ TEXT-r11 }|
+          RECEIVING
+            control                  = lo_export_button
+        ).
+        lo_toolbar->add_toolbar_right_item(
+          index                  = 1
+          the_toolbar_right_item = lo_export_button
+        ).
+      ENDIF.
+    ENDIF.
+
+    IF ms_setup-find_off EQ abap_false.
+      IF 1 EQ 2.
+        " 기존 버튼 방식.
+        DATA(lo_search_button) = cl_wd_toolbar_button=>new_toolbar_button(
+          id           = lv_table_id && `___BTN_FPM_SEARCH` "#EC NOTEXT
+          on_action    = `ZWD_C_TABLE_PLUS_OPEN_SEARCH`     "#EC NOTEXT
+          design       = cl_wd_toolbar_button=>e_design-standard
+          enabled      = abap_true
+          image_first  = abap_true
+*          image_source = if_fpm_constants_internal=>gc_image-search
+          image_source = '~Icon/Search'
+          tooltip      = |{ TEXT-r16 }|
+          hotkey       = cl_wd_link_to_action=>e_hotkey-ctrl_f ).
+        lo_toolbar->add_toolbar_right_item(
+          index                  = 1
+          the_toolbar_right_item = lo_search_button
+        ).
+      ELSE.
+        lv_path  =
+                |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
+*          && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
+          && |{ mo_c_table->id }.|
+          && |{ if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_string }|.
+        lv_path_visible  =
+                |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
+*          && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
+          && |{ mo_c_table->id }.|
+          && |{ if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_open }:NOT|.
+        DATA(lo_open_search_if) = cl_wd_toolbar_input_field=>new_toolbar_input_field(
+          EXPORTING
+            bind_value                  = lv_path
+            bind_visible                = lv_path_visible
+            enabled                     = abap_true
+            id                          = lv_table_id && `___BTN_FPM_SEARCH` "#EC NOTEXT
+            label_text                  = |{ TEXT-r16 }|
+            on_enter                    = `ZWD_C_TABLE_PLUS_OPEN_SEARCH` "#EC NOTEXT
+        ).
+        lo_toolbar->add_toolbar_right_item(
+          index                  = 1
+          the_toolbar_right_item = lo_open_search_if
+        ).
+      ENDIF.
+
+      " create popin
+      lv_path  =
+              |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
+*        && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
+        && |{ mo_c_table->id }.|
+        && |{ if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_open }| .
+      lo_popin = cl_wd_popin=>new_popin( id = lv_table_id && '___POPIN_SEARCH'
+                                         has_content_padding = abap_false
+                                         bind_visible = lv_path ).
+      lo_toolbar->set_toolbar_popin( the_toolbar_popin = lo_popin ).
+
+      DATA lo_lc TYPE REF TO cl_wd_layout_container.
+      lo_lc ?= cl_wd_layout_container=>new_layout_container( width = '100%' ).
+      cl_wd_matrix_layout=>new_matrix_layout( EXPORTING container = lo_lc
+                                             stretched_horizontally = abap_true
+                                             stretched_vertically   = abap_false ).
+      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lc ).
+      lo_popin->set_content( EXPORTING the_content = lo_lc  ).
+
+
+      DATA lo_tc TYPE REF TO cl_wd_transparent_container.
+      lo_tc ?= cl_wd_transparent_container=>new_transparent_container( width = '100%' ).
+      cl_wd_flow_layout=>new_flow_layout( EXPORTING container = lo_tc
+                                          wrapping = abap_true ).
+
+      cl_wd_matrix_head_data=>new_matrix_head_data( EXPORTING element = lo_tc
+                                      h_align = cl_wd_matrix_head_data=>e_h_align-end_of_line
+                                      v_align = cl_wd_matrix_head_data=>e_v_align-top   ).
+
+      lo_lc->add_child( lo_tc ).
+
       lv_path  =
               |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
 *        && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
         && |{ mo_c_table->id }.|
         && |{ if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_string }|.
-      lv_path_visible  =
-              |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
-*        && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
-        && |{ mo_c_table->id }.|
-        && |{ if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_open }:NOT|.
-      DATA(lo_open_search_if) = cl_wd_toolbar_input_field=>new_toolbar_input_field(
-        EXPORTING
-          bind_value                  = lv_path
-          bind_visible                = lv_path_visible
-          enabled                     = abap_true
-          id                          = lv_table_id && `___BTN_FPM_SEARCH` "#EC NOTEXT
-          label_text                  = |{ TEXT-r16 }|
-          on_enter                    = `ZWD_C_TABLE_PLUS_OPEN_SEARCH` "#EC NOTEXT
-      ).
-      lo_toolbar->add_toolbar_right_item( lo_open_search_if ).
+      DATA lo_label TYPE REF TO cl_wd_label.
+      lo_label ?= cl_wd_label=>new_label(
+*                          id           = 'FPM_SEARCH_STRING_LABEL'
+                          editable     = abap_false
+                          text         = |{ TEXT-r12 }|
+                          label_for    = lv_table_id && '___SEARCH_STRING'
+                          wrapping     = abap_true ).
+      DATA lo_inp_field TYPE REF TO cl_wd_input_field.
+      lo_inp_field ?= cl_wd_input_field=>new_input_field(
+                          id           = lv_table_id && '___SEARCH_STRING'
+                          bind_value = lv_path
+                          input_help = '03' "search
+                          " input_prompt = |{ text-r12 }|
+                          on_enter     = 'ZWD_C_TABLE_PLUS_SEARCH_EXECUTE'
+                          width        = '12em' ).
+
+      DATA lo_txt_field TYPE REF TO cl_wd_text_view.
+      lv_path  = |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
+*              && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
+              && |{ mo_c_table->id }.|
+              && |{ if_fpm_list_types=>cs_list_attribute_internal-search_text_matches }|.
+      lv_path_visible  = |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
+*              && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
+              && |{ mo_c_table->id }.|
+              && |{ if_fpm_list_types=>cs_list_attribute_internal-search_text_matches_visible }|.
+      lo_txt_field ?= cl_wd_text_view=>new_text_view(
+                                                      id           = lv_table_id && '___SEARCH_MATCHES'
+                                                      bind_visible = lv_path_visible
+                                                      bind_text    = lv_path
+                                                      wrapping     = abap_false ).
+
+      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_inp_field
+                                                cell_design = cl_wd_flow_data=>e_cell_design-l_pad ).
+      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_label
+                                               cell_design = cl_wd_flow_data=>e_cell_design-l_pad
+                                               v_gutter = cl_wd_matrix_data=>e_v_gutter-medium ).
+      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_txt_field
+                                               cell_design = cl_wd_flow_data=>e_cell_design-l_pad ).
+
+      lo_tc->add_child( lo_txt_field ).
+      lo_tc->add_child( lo_label ).
+      lo_tc->add_child( lo_inp_field ).
+
+      DATA lo_btn_tc TYPE REF TO cl_wd_transparent_container.
+      lo_btn_tc ?= cl_wd_transparent_container=>new_transparent_container(  ).
+      cl_wd_flow_layout=>new_flow_layout( EXPORTING container = lo_btn_tc
+                                                    wrapping = abap_true ).
+*      IF mo_config_data->get_table_settings( )-allow_search NE 'X' AND
+*         mo_config_data->get_table_settings( )-allow_search NE 'Y'.
+      DATA lo_lnk_tc TYPE REF TO cl_wd_link_to_action.
+      lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
+                                    id           = lv_table_id && '___SEARCH_LEFT'
+*                                    image_source = if_fpm_constants_internal=>gc_image-move_up
+                                    image_source = '~Icon/MoveUp'
+                                    tooltip      = |{ TEXT-r13 }|
+                                    on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_LEFT'
+                                    hotkey       = cl_wd_link_to_action=>e_hotkey-alt_arrow_up ).
+      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lnk_tc
+                                     cell_design = cl_wd_flow_data=>e_cell_design-l_pad ).
+      lo_tc->add_child( lo_lnk_tc ).
+
+      lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
+                                    id           = lv_table_id && '___SEARCH_RIGHT'
+*                                    image_source = if_fpm_constants_internal=>gc_image-move_down
+                                    image_source = '~Icon/MoveDown'
+                                    tooltip      = |{ TEXT-r14 }|
+                                    on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_RIGHT'
+                                    hotkey       = cl_wd_link_to_action=>e_hotkey-alt_arrow_down ).
+      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lnk_tc
+                                    cell_design = cl_wd_flow_data=>e_cell_design-l_pad ).
+      lo_tc->add_child( lo_lnk_tc ).
+*      ENDIF.
+
+      lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
+                                    id           = lv_table_id && '___SEARCH_CLOSE'
+*                                    image_source = if_fpm_constants_internal=>gc_image-cancel
+                                    image_source = '~Icon/Cancel'
+                                    tooltip      = |{ TEXT-r15 }|
+                                    on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_CLOSE'
+                                    hotkey       =  cl_wd_link_to_action=>e_hotkey-ctrl_shift_f ).  " '70'   ).   " ctrl-shift-f  "cl_wd_link_to_action=>e_hotkey-ctrl_shift_f
+      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lnk_tc
+                                      cell_design = cl_wd_flow_data=>e_cell_design-l_pad  ).
+      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_btn_tc
+                                      cell_design = cl_wd_flow_data=>e_cell_design-l_pad  ).
+      lo_tc->add_child( lo_lnk_tc ).
     ENDIF.
-
-
-
-    " create popin
-    lv_path  =
-            |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
-*      && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
-      && |{ mo_c_table->id }.|
-      && |{ if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_open }| .
-    lo_popin = cl_wd_popin=>new_popin( id = lv_table_id && '___POPIN_SEARCH'
-                                       has_content_padding = abap_false
-                                       bind_visible = lv_path ).
-    lo_toolbar->set_toolbar_popin( the_toolbar_popin = lo_popin ).
-
-    DATA lo_lc TYPE REF TO cl_wd_layout_container.
-    lo_lc ?= cl_wd_layout_container=>new_layout_container( width = '100%' ).
-    cl_wd_matrix_layout=>new_matrix_layout( EXPORTING container = lo_lc
-                                           stretched_horizontally = abap_true
-                                           stretched_vertically   = abap_false ).
-    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lc ).
-    lo_popin->set_content( EXPORTING the_content = lo_lc  ).
-
-
-    DATA lo_tc TYPE REF TO cl_wd_transparent_container.
-    lo_tc ?= cl_wd_transparent_container=>new_transparent_container( width = '100%' ).
-    cl_wd_flow_layout=>new_flow_layout( EXPORTING container = lo_tc
-                                        wrapping = abap_true ).
-
-    cl_wd_matrix_head_data=>new_matrix_head_data( EXPORTING element = lo_tc
-                                    h_align = cl_wd_matrix_head_data=>e_h_align-end_of_line
-                                    v_align = cl_wd_matrix_head_data=>e_v_align-top   ).
-
-    lo_lc->add_child( lo_tc ).
-
-    lv_path  =
-            |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
-*      && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
-      && |{ mo_c_table->id }.|
-      && |{ if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_string }|.
-    DATA lo_label TYPE REF TO cl_wd_label.
-    lo_label ?= cl_wd_label=>new_label(
-*                        id           = 'FPM_SEARCH_STRING_LABEL'
-                        editable     = abap_false
-                        text         = |{ TEXT-r12 }|
-                        label_for    = lv_table_id && '___SEARCH_STRING'
-                        wrapping     = abap_true ).
-    DATA lo_inp_field TYPE REF TO cl_wd_input_field.
-    lo_inp_field ?= cl_wd_input_field=>new_input_field(
-                        id           = lv_table_id && '___SEARCH_STRING'
-                        bind_value = lv_path
-                        input_help = '03' "search
-                        " input_prompt = |{ text-r12 }|
-                        on_enter     = 'ZWD_C_TABLE_PLUS_SEARCH_EXECUTE'
-                        width        = '12em' ).
-
-    DATA lo_txt_field TYPE REF TO cl_wd_text_view.
-    lv_path  = |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
-*            && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
-            && |{ mo_c_table->id }.|
-            && |{ if_fpm_list_types=>cs_list_attribute_internal-search_text_matches }|.
-    lv_path_visible  = |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
-*            && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
-            && |{ mo_c_table->id }.|
-            && |{ if_fpm_list_types=>cs_list_attribute_internal-search_text_matches_visible }|.
-    lo_txt_field ?= cl_wd_text_view=>new_text_view(
-                                                    id           = lv_table_id && '___SEARCH_MATCHES'
-                                                    bind_visible = lv_path_visible
-                                                    bind_text    = lv_path
-                                                    wrapping     = abap_false ).
-
-    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_inp_field
-                                              cell_design = cl_wd_flow_data=>e_cell_design-l_pad ).
-    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_label
-                                             cell_design = cl_wd_flow_data=>e_cell_design-l_pad
-                                             v_gutter = cl_wd_matrix_data=>e_v_gutter-medium ).
-    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_txt_field
-                                             cell_design = cl_wd_flow_data=>e_cell_design-l_pad ).
-
-    lo_tc->add_child( lo_txt_field ).
-    lo_tc->add_child( lo_label ).
-    lo_tc->add_child( lo_inp_field ).
-
-    DATA lo_btn_tc TYPE REF TO cl_wd_transparent_container.
-    lo_btn_tc ?= cl_wd_transparent_container=>new_transparent_container(  ).
-    cl_wd_flow_layout=>new_flow_layout( EXPORTING container = lo_btn_tc
-                                                  wrapping = abap_true ).
-*    IF mo_config_data->get_table_settings( )-allow_search NE 'X' AND
-*       mo_config_data->get_table_settings( )-allow_search NE 'Y'.
-    DATA lo_lnk_tc TYPE REF TO cl_wd_link_to_action.
-    lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
-                                  id           = lv_table_id && '___SEARCH_LEFT'
-*                                  image_source = if_fpm_constants_internal=>gc_image-move_up
-                                  image_source = '~Icon/MoveUp'
-                                  tooltip      = |{ TEXT-r13 }|
-                                  on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_LEFT'
-                                  hotkey       = cl_wd_link_to_action=>e_hotkey-alt_arrow_up ).
-    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lnk_tc
-                                   cell_design = cl_wd_flow_data=>e_cell_design-l_pad ).
-    lo_tc->add_child( lo_lnk_tc ).
-
-    lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
-                                  id           = lv_table_id && '___SEARCH_RIGHT'
-*                                  image_source = if_fpm_constants_internal=>gc_image-move_down
-                                  image_source = '~Icon/MoveDown'
-                                  tooltip      = |{ TEXT-r14 }|
-                                  on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_RIGHT'
-                                  hotkey       = cl_wd_link_to_action=>e_hotkey-alt_arrow_down ).
-    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lnk_tc
-                                  cell_design = cl_wd_flow_data=>e_cell_design-l_pad ).
-    lo_tc->add_child( lo_lnk_tc ).
-*    ENDIF.
-
-    lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
-                                  id           = lv_table_id && '___SEARCH_CLOSE'
-*                                  image_source = if_fpm_constants_internal=>gc_image-cancel
-                                  image_source = '~Icon/Cancel'
-                                  tooltip      = |{ TEXT-r15 }|
-                                  on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_CLOSE'
-                                  hotkey       =  cl_wd_link_to_action=>e_hotkey-ctrl_shift_f ).  " '70'   ).   " ctrl-shift-f  "cl_wd_link_to_action=>e_hotkey-ctrl_shift_f
-    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lnk_tc
-                                    cell_design = cl_wd_flow_data=>e_cell_design-l_pad  ).
-    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_btn_tc
-                                    cell_design = cl_wd_flow_data=>e_cell_design-l_pad  ).
-    lo_tc->add_child( lo_lnk_tc ).
-
-
-    " excel export button
-    IF zcl_abap2xlsx_helper=>is_abap2xlsx_installed( iv_with_message = abap_false ) EQ abap_true.
-      DATA lo_export_button TYPE REF TO cl_wd_toolbar_button.
-      cl_wd_toolbar_button=>new_toolbar_button(
-        EXPORTING
-          id                       = lv_table_id && '___EXPORT'
-*          image_source             = if_fpm_constants_internal=>gc_image-export_to_spreadsheet
-          image_source             = '~Icon/ExportToSpreadsheet'
-          on_action                = 'ZWD_C_TABLE_PLUS_EXPORT'
-          tooltip                  = |{ TEXT-r11 }|
-        RECEIVING
-          control                  = lo_export_button
-      ).
-      lo_toolbar->add_toolbar_right_item( lo_export_button ).
-    ENDIF.
-
 
   ENDMETHOD.
 
