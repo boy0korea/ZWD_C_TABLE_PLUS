@@ -4,6 +4,13 @@ class ZCL_WD_C_TABLE_PLUS definition
 
 public section.
 
+  types:
+    BEGIN OF ts_setup,
+      sort_off TYPE flag,
+      find_off TYPE flag,
+      export_off TYPE flag,
+    END OF ts_setup .
+
   constants:
     BEGIN OF gc_search_state,
         not_active     TYPE string        VALUE 'NOT_ACTIVE', " no search currently active
@@ -16,10 +23,12 @@ public section.
   class-methods UPGRADE_C_TABLE
     importing
       !IO_VIEW_API type ref to IF_WD_VIEW_CONTROLLER
-      !IO_C_TABLE type ref to CL_WD_C_TABLE optional .
+      !IO_C_TABLE type ref to CL_WD_C_TABLE optional
+      !IS_SETUP type TS_SETUP optional .
   class-methods CREATE_INSTANCE
     importing
       !IO_C_TABLE type ref to CL_WD_C_TABLE
+      !IS_SETUP type TS_SETUP optional
     returning
       value(RO_INSTANCE) type ref to ZCL_WD_C_TABLE_PLUS .
   class-methods GET_INSTANCE
@@ -29,8 +38,10 @@ public section.
       value(RO_INSTANCE) type ref to ZCL_WD_C_TABLE_PLUS .
   methods CONSTRUCTOR
     importing
-      !IO_C_TABLE type ref to CL_WD_C_TABLE optional .
+      !IO_C_TABLE type ref to CL_WD_C_TABLE optional
+      !IS_SETUP type TS_SETUP optional .
   methods ON_OPEN_SEARCH .
+  methods ON_SEARCH_CLOSE .
   methods ON_DO_SEARCH .
   methods ON_SEARCH_JUMP_TO_NEXT_HIT
     importing
@@ -39,7 +50,6 @@ public section.
     importing
       !IO_EVENT type ref to CL_WD_CUSTOM_EVENT optional .
   methods DISPATCH_EXPORT .
-  methods ON_SEARCH_CLOSE .
   PROTECTED SECTION.
 
     CLASS-METHODS readme .
@@ -96,14 +106,8 @@ private section.
     mt_cell_editor_id TYPE TABLE OF string .
   data MV_SORT_COLUMN_NAME type STRING .
   data MO_C_TABLE_CONTEXT type ref to IF_WD_CONTEXT_NODE .
+  data MS_SETUP type TS_SETUP .
 
-  methods ON_DATA_SOURCE_SET
-    for event ON_COLLECTION_CHANGED of CL_WDR_CONTEXT_NODE
-    importing
-      !CONTROLLER
-      !NODE
-      !NODE_NAME
-      !PROPERTY .
   class-methods GET_WD_USAGE
     importing
       !IO_VIEW_API type ref to IF_WD_VIEW_CONTROLLER
@@ -112,6 +116,13 @@ private section.
   methods CREATE_MT_COLUMN_MAPPING .
   methods ON_DELETE
     for event COMPONENT_DELETED of CL_WDR_COMPONENT_USAGE .
+  methods ON_DATA_SOURCE_SET
+    for event ON_COLLECTION_CHANGED of CL_WDR_CONTEXT_NODE
+    importing
+      !CONTROLLER
+      !NODE
+      !NODE_NAME
+      !PROPERTY .
   methods GET_SEARCH_STRING
     returning
       value(RV_SEARCH_STRING) type STRING .
@@ -268,9 +279,10 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
     CHECK: io_c_table IS NOT INITIAL.
 
-    mv_search_state = gc_search_state-not_active.
     mo_c_table = io_c_table.
     mo_c_table_context = mo_c_table->get_data_source( ).
+    ms_setup = is_setup.
+    mv_search_state = gc_search_state-not_active.
     mo_view = mo_c_table->view.
     mo_context_root = mo_view->if_wd_controller~get_context( )->root_node.
 
@@ -932,20 +944,15 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD GET_INSTANCE.
+  METHOD get_instance.
     DATA: ls_instance TYPE ty_s_instance.
 
     READ TABLE gt_instance INTO ls_instance WITH KEY c_table = io_c_table.
     IF sy-subrc <> 0.
-      ls_instance-c_table = io_c_table.
-      CREATE OBJECT ls_instance-instance
-        EXPORTING
-          io_c_table = io_c_table.
-      INSERT ls_instance INTO TABLE gt_instance.
+      EXIT.
     ENDIF.
 
     ro_instance = ls_instance-instance.
-
   ENDMETHOD.
 
 
@@ -1026,15 +1033,20 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
   METHOD get_wd_usage.
     DATA: ls_wd_usage TYPE ty_s_wd_usage,
+          lo_wdr_view TYPE REF TO cl_wdr_view,
           lv_comp     TYPE string,
           lv_usage    TYPE string,
           lo_f        TYPE REF TO ziwci_wd_c_table_plus.
+
+    lo_wdr_view ?= io_view_api.
 
     READ TABLE gt_wd_usage INTO ls_wd_usage WITH KEY view = io_view_api.
     IF sy-subrc <> 0.
       ls_wd_usage-view = io_view_api.
       lv_comp = 'ZWD_C_TABLE_PLUS'.
-      lv_usage = 'ZWD_C_TABLE_PLUS_' && io_view_api->name.
+      lv_usage = CAST cl_wdr_view_manager( lo_wdr_view->view_manager )->embedding_view_area.
+      REPLACE ALL OCCURRENCES OF '$' IN lv_usage WITH '_'.
+      lv_usage = io_view_api->name && lv_usage.
       ls_wd_usage-usage ?= cl_wdr_runtime_services=>get_component_usage(
                              component            = io_view_api->get_component( )
                              used_component_name  = lv_comp
@@ -1048,7 +1060,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
       DATA(lo_vm) = lt_vm[ name = 'W_MAIN' ]-view_manager.
       lo_vm->window_info->set_is_dynamic( abap_true ).
       DATA(lo_v) = lo_vm->get_view( view_usage = lo_vm->window_info->default_root_vusage ).
-      CAST cl_wdr_view( io_view_api )->add_action(
+      lo_wdr_view->add_action(
         EXPORTING
           action  = NEW cl_wdr_action(
           controller       = lo_v
@@ -1057,7 +1069,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
         )
           command = 'ZWD_C_TABLE_PLUS_OPEN_SEARCH'
       ).
-      CAST cl_wdr_view( io_view_api )->add_action(
+      lo_wdr_view->add_action(
         EXPORTING
           action  = NEW cl_wdr_action(
           controller       = lo_v
@@ -1066,7 +1078,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
         )
           command = 'ZWD_C_TABLE_PLUS_SEARCH_EXECUTE'
       ).
-      CAST cl_wdr_view( io_view_api )->add_action(
+      lo_wdr_view->add_action(
         EXPORTING
           action  = NEW cl_wdr_action(
           controller       = lo_v
@@ -1075,7 +1087,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
         )
           command = 'ZWD_C_TABLE_PLUS_SEARCH_LEFT'
       ).
-      CAST cl_wdr_view( io_view_api )->add_action(
+      lo_wdr_view->add_action(
         EXPORTING
           action  = NEW cl_wdr_action(
           controller       = lo_v
@@ -1084,7 +1096,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
         )
           command = 'ZWD_C_TABLE_PLUS_SEARCH_RIGHT'
       ).
-      CAST cl_wdr_view( io_view_api )->add_action(
+      lo_wdr_view->add_action(
         EXPORTING
           action  = NEW cl_wdr_action(
           controller       = lo_v
@@ -1093,7 +1105,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
         )
           command = 'ZWD_C_TABLE_PLUS_SEARCH_CLOSE'
       ).
-      CAST cl_wdr_view( io_view_api )->add_action(
+      lo_wdr_view->add_action(
         EXPORTING
           action  = NEW cl_wdr_action(
           controller       = lo_v
@@ -1102,7 +1114,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
         )
           command = 'ZWD_C_TABLE_PLUS_SORT'
       ).
-      CAST cl_wdr_view( io_view_api )->add_action(
+      lo_wdr_view->add_action(
         EXPORTING
           action  = NEW cl_wdr_action(
           controller       = lo_v
@@ -1529,7 +1541,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
         ENDIF.
         IF ir_current_hit->row > lv_last_visi_row.
           " scrolling is necessary
-          lv_new_first_visi_row = ir_current_hit->row - mo_c_table->get_visible_row_count( ) + 1.
+*          lv_new_first_visi_row = ir_current_hit->row - mo_c_table->get_visible_row_count( ) + 1.
+          lv_new_first_visi_row = ir_current_hit->row - mo_c_table->get_visible_row_count( ) + 2.   " popin 열어서 한줄 더 필요함.
           mo_c_table->set_first_visible_row( value = lv_new_first_visi_row ).
         ENDIF.
     ENDCASE.
@@ -1616,14 +1629,25 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
   METHOD upgrade_c_table.
 * WDDOMODIFYVIEW 에서 호출하세요.
+    DATA: lo_c_table TYPE REF TO cl_wd_c_table.
+
     get_wd_usage( io_view_api ).
 
     IF io_c_table IS NOT INITIAL.
-      create_instance( io_c_table ).
+      create_instance(
+        EXPORTING
+          io_c_table  = io_c_table
+          is_setup    = is_setup
+      ).
     ELSE.
       DATA(lt_uiel) = CAST cl_wdr_view( io_view_api )->get_elements_by_cid( cl_wd_c_table=>cid_c_table ).
       LOOP AT lt_uiel INTO DATA(lo_uiel).
-        create_instance( CAST cl_wd_c_table( lo_uiel ) ).
+        lo_c_table = CAST cl_wd_c_table( lo_uiel ).
+        create_instance(
+          EXPORTING
+            io_c_table  = lo_c_table
+            is_setup    = is_setup
+        ).
       ENDLOOP.
     ENDIF.
   ENDMETHOD.
@@ -1655,7 +1679,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD on_search_close.
+  METHOD ON_SEARCH_CLOSE.
 *CL_FPM_TREE_RENDERING
 
     DATA lv_node_path TYPE string.
@@ -1676,7 +1700,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD on_data_source_set.
+  METHOD ON_DATA_SOURCE_SET.
 * 검색 버튼을 눌러서 테이블 내용이 변경되는 경우 정렬표시를 제거함.
     CHECK: node EQ mo_c_table_context.
     on_search_close( ).
@@ -1687,8 +1711,9 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD CREATE_INSTANCE.
+  METHOD create_instance.
     DATA: ls_instance TYPE ty_s_instance.
+
     READ TABLE gt_instance INTO ls_instance WITH KEY c_table = io_c_table.
     IF sy-subrc EQ 0.
       DELETE gt_instance WHERE c_table = io_c_table.
@@ -1704,6 +1729,14 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
       DATA lo_popin TYPE REF TO cl_wd_popin.
       lo_tb->set_toolbar_popin( the_toolbar_popin = lo_popin ).
     ENDIF.
-    ro_instance = get_instance( io_c_table ).
+
+    ls_instance-c_table = io_c_table.
+    CREATE OBJECT ls_instance-instance
+      EXPORTING
+        io_c_table = io_c_table
+        is_setup   = is_setup.
+    INSERT ls_instance INTO TABLE gt_instance.
+    ro_instance = ls_instance-instance.
+
   ENDMETHOD.
 ENDCLASS.
