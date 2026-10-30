@@ -488,6 +488,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
   METHOD create_mt_column_mapping.
     DATA: lt_column         TYPE cl_wd_abstr_c_table_column=>tt_abstr_c_table_column,
+          lt_column_group   TYPE cl_wd_abstr_c_table_column=>tt_abstr_c_table_column,
           lo_column         TYPE REF TO cl_wd_abstr_c_table_column,
           lo_cell_editor    TYPE REF TO cl_wd_uielement,
           lo_header_menu    TYPE REF TO cl_wd_menu,
@@ -501,6 +502,11 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
     ENDIF.
 
     lt_column = mo_c_table->get_columns( ).
+    lt_column_group = mo_c_table->get_column_groups( ).
+    IF lt_column_group IS NOT INITIAL.
+      APPEND LINES OF lt_column_group TO lt_column.
+    ENDIF.
+
     LOOP AT lt_column INTO lo_column.
       IF lo_column->_cid EQ cl_wd_c_table_column_group=>cid_c_table_column_group.
         APPEND LINES OF CAST cl_wd_c_table_column_group( lo_column )->get_columns( ) TO lt_column.
