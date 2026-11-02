@@ -18,16 +18,6 @@ METHOD onactionexport .
   get_zcl_wd_c_table_plus( id )->dispatch_export( ).
 ENDMETHOD.
 
-METHOD onactionopen_search .
-*  wd_assist->on_open_search( ).
-  get_zcl_wd_c_table_plus( id )->on_open_search( ).
-ENDMETHOD.
-
-METHOD ONACTIONSEARCH_CLOSE .
-*  wd_assist->on_search_close( ).
-  get_zcl_wd_c_table_plus( id )->on_search_close( ).
-ENDMETHOD.
-
 METHOD onactionsearch_execute .
 *  wd_assist->on_do_search( ).
   get_zcl_wd_c_table_plus( id )->on_do_search( ).
@@ -35,7 +25,7 @@ ENDMETHOD.
 
 METHOD onactionsearch_left .
 *  wd_assist->on_search_jump_to_next_hit( iv_search_direction_next = abap_false ).
-  get_zcl_wd_c_table_plus( id )->on_search_jump_to_next_hit( iv_search_direction_next = abap_false ).
+  get_zcl_wd_c_table_plus( id )->on_search_jump_to_next_hit( iv_search_direction_next = abap_true ).
 ENDMETHOD.
 
 METHOD onactionsearch_right .

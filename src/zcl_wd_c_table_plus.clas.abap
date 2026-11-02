@@ -1,18 +1,11 @@
-class ZCL_WD_C_TABLE_PLUS definition
-  public
-  create public .
+CLASS zcl_wd_c_table_plus DEFINITION
+  PUBLIC
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  types:
-    BEGIN OF ts_setup,
-      sort_off TYPE flag,
-      find_off TYPE flag,
-      export_off TYPE flag,
-    END OF ts_setup .
-
-  constants:
-    BEGIN OF gc_search_state,
+    CONSTANTS:
+      BEGIN OF gc_search_state,
         not_active     TYPE string        VALUE 'NOT_ACTIVE', " no search currently active
         active         TYPE string            VALUE 'ACTIVE', " means search is executed and search UI is visible
         to_be_executed TYPE string    VALUE 'TO_BE_EXECUTED', " search button has been just pressed
@@ -20,173 +13,153 @@ public section.
         jump_to_prev   TYPE string      VALUE 'JUMP_TO_PREV', " means jump to prev
       END OF gc_search_state .
 
-  class-methods UPGRADE_C_TABLE
-    importing
-      !IO_VIEW_API type ref to IF_WD_VIEW_CONTROLLER
-      !IO_C_TABLE type ref to CL_WD_C_TABLE optional
-      !IS_SETUP type TS_SETUP optional .
-  class-methods CREATE_INSTANCE
-    importing
-      !IO_C_TABLE type ref to CL_WD_C_TABLE
-      !IS_SETUP type TS_SETUP optional
-    returning
-      value(RO_INSTANCE) type ref to ZCL_WD_C_TABLE_PLUS .
-  class-methods GET_INSTANCE
-    importing
-      !IO_C_TABLE type ref to CL_WD_C_TABLE
-    returning
-      value(RO_INSTANCE) type ref to ZCL_WD_C_TABLE_PLUS .
-  methods CONSTRUCTOR
-    importing
-      !IO_C_TABLE type ref to CL_WD_C_TABLE optional
-      !IS_SETUP type TS_SETUP optional .
-  methods ON_OPEN_SEARCH .
-  methods ON_SEARCH_CLOSE .
-  methods ON_DO_SEARCH .
-  methods ON_SEARCH_JUMP_TO_NEXT_HIT
-    importing
-      !IV_SEARCH_DIRECTION_NEXT type ABAP_BOOL .
-  methods DISPATCH_SORT_EVENT
-    importing
-      !IO_EVENT type ref to CL_WD_CUSTOM_EVENT optional .
-  methods DISPATCH_EXPORT .
+    CLASS-METHODS upgrade_c_table
+      IMPORTING
+        !io_view_api TYPE REF TO if_wd_view_controller
+        !io_c_table  TYPE REF TO cl_wd_c_table OPTIONAL .
+    METHODS constructor
+      IMPORTING
+        !io_c_table TYPE REF TO cl_wd_c_table .
+    METHODS on_do_search .
+    METHODS on_search_jump_to_next_hit
+      IMPORTING
+        !iv_search_direction_next TYPE abap_bool .
+    CLASS-METHODS get_instance
+      IMPORTING
+        !io_c_table        TYPE REF TO cl_wd_c_table
+      RETURNING
+        VALUE(ro_instance) TYPE REF TO zcl_wd_c_table_plus .
+    METHODS dispatch_sort_event
+      IMPORTING
+        !io_event TYPE REF TO cl_wd_custom_event OPTIONAL .
+    METHODS dispatch_export .
   PROTECTED SECTION.
 
     CLASS-METHODS readme .
-private section.
+  PRIVATE SECTION.
 
-  types:
-    BEGIN OF ty_s_instance,
+    TYPES:
+      BEGIN OF ty_s_instance,
         c_table  TYPE REF TO cl_wd_c_table,
         instance TYPE REF TO zcl_wd_c_table_plus,
       END OF ty_s_instance .
-  types:
-    ty_t_instance TYPE HASHED TABLE OF ty_s_instance WITH UNIQUE KEY c_table .
-  types:
-    BEGIN OF ty_s_wd_usage,
+    TYPES:
+      ty_t_instance TYPE HASHED TABLE OF ty_s_instance WITH UNIQUE KEY c_table .
+    TYPES:
+      BEGIN OF ty_s_wd_usage,
         view  TYPE REF TO if_wd_view_controller,
         usage TYPE REF TO cl_wdr_component_usage,
       END OF ty_s_wd_usage .
-  types:
-    ty_t_wd_usage TYPE HASHED TABLE OF ty_s_wd_usage WITH UNIQUE KEY view .
-  types:
-    BEGIN OF ty_s_column_mapping,
+    TYPES:
+      ty_t_wd_usage TYPE HASHED TABLE OF ty_s_wd_usage WITH UNIQUE KEY view .
+    TYPES:
+      BEGIN OF ty_s_column_mapping,
         ui_column         TYPE REF TO cl_wd_c_table_column,
         ui_cell_editor_id TYPE string,
         table_field_name  TYPE string,
       END OF ty_s_column_mapping .
-  types:
-    ty_t_column_mapping TYPE STANDARD TABLE OF ty_s_column_mapping .
+    TYPES:
+      ty_t_column_mapping TYPE STANDARD TABLE OF ty_s_column_mapping .
 
-  class-data GT_INSTANCE type TY_T_INSTANCE .
-  class-data GT_WD_USAGE type TY_T_WD_USAGE .
-  constants:
-    BEGIN OF gc_scroll_type,
+    CLASS-DATA gt_instance TYPE ty_t_instance .
+    CLASS-DATA gt_wd_usage TYPE ty_t_wd_usage .
+    CONSTANTS:
+      BEGIN OF gc_scroll_type,
         jump_to_next        TYPE string VALUE 'JUMP_TO_NEXT', " means a node has been expanded/collapsed
         jump_to_prev        TYPE string VALUE 'JUMP_TO_PREV', " means a node has been expanded/collapsed
         jump_to_initial_hit TYPE string VALUE 'JUMP_TO_INITIAL_HIT', " means a node has been expanded/collapsed
       END OF gc_scroll_type .
-  data MV_SEARCH_STATE type STRING .           " see gc_search_state
-  data MV_USER_CHANGED_DATA type ABAP_BOOL .
-  data MO_TOOLBOX type ref to CL_SALV_STI_TOOLBOX .
-  data MV_SEARCH_STRING type STRING .
-  data MV_SEARCH_STRING_PREV type STRING .
-  data MT_TOOLBOX_HITS type CL_SALV_STI_TOOLBOX=>YT_HIT .
-  data MV_CURRENT_HIT_IDX type I .
-  data MV_AUX_INDEX type I .
-  data MV_UPDATE_FRONTEND_NECESSARY type ABAP_BOOL .
-  data MO_RTTI type ref to CL_ABAP_STRUCTDESCR .
-  data MV_IS_RTTI_STATIC type FLAG .
-  data MO_C_TABLE type ref to CL_WD_C_TABLE .
-  data MO_VIEW type ref to IF_WD_VIEW .
-  data MO_CONTEXT_ROOT type ref to IF_WD_CONTEXT_NODE .
-  data MO_PARENT_USAGE type ref to CL_WDR_COMPONENT_USAGE .
-  data MT_COLUMN_MAPPING type TY_T_COLUMN_MAPPING .
-  data:
-    mt_cell_editor_id TYPE TABLE OF string .
-  data MV_SORT_COLUMN_NAME type STRING .
-  data MO_C_TABLE_CONTEXT type ref to IF_WD_CONTEXT_NODE .
-  data MS_SETUP type TS_SETUP .
+    DATA mv_search_state TYPE string .         " see gc_search_state
+    DATA mv_user_changed_data TYPE abap_bool .
+    DATA mo_toolbox TYPE REF TO cl_salv_sti_toolbox .
+    DATA mv_search_string TYPE string .
+    DATA mv_search_string_prev TYPE string .
+    DATA mt_toolbox_hits TYPE cl_salv_sti_toolbox=>yt_hit .
+    DATA mv_current_hit_idx TYPE i .
+    DATA mv_aux_index TYPE i .
+    DATA mv_update_frontend_necessary TYPE abap_bool .
+    DATA mo_rtti TYPE REF TO cl_abap_structdescr .
+    DATA mv_is_rtti_static TYPE flag .
+    DATA mo_c_table TYPE REF TO cl_wd_c_table .
+    DATA mo_view TYPE REF TO if_wd_view .
+    DATA mo_context_root TYPE REF TO if_wd_context_node .
+    DATA mo_parent_usage TYPE REF TO cl_wdr_component_usage .
+    DATA mt_column_mapping TYPE ty_t_column_mapping .
+    DATA:
+      mt_cell_editor_id TYPE TABLE OF string .
 
-  class-methods GET_WD_USAGE
-    importing
-      !IO_VIEW_API type ref to IF_WD_VIEW_CONTROLLER
-    returning
-      value(RO_WD_USAGE) type ref to CL_WDR_COMPONENT_USAGE .
-  methods CREATE_MT_COLUMN_MAPPING .
-  methods ON_DELETE
-    for event COMPONENT_DELETED of CL_WDR_COMPONENT_USAGE .
-  methods ON_DATA_SOURCE_SET
-    for event ON_COLLECTION_CHANGED of CL_WDR_CONTEXT_NODE
-    importing
-      !CONTROLLER
-      !NODE
-      !NODE_NAME
-      !PROPERTY .
-  methods GET_SEARCH_STRING
-    returning
-      value(RV_SEARCH_STRING) type STRING .
-  methods EXECUTE_SEARCH .
-  methods JUMP_TO_NEXT_HIT .
-  methods JUMP_TO_PREV_HIT .
-  methods DEACTIVATE .
-  methods GET_SEARCH_STATE
-    returning
-      value(RV_STATE) type STRING .
-  methods SET_SEARCH_STATE
-    importing
-      !IV_SEARCH_STATE type STRING .
-  methods SET_USER_CHANGED_DATA .
-  methods GET_FIRST_VISI_ROW
-    returning
-      value(RV_ROW_INDEX) type I .
-  methods GET_LAST_VISI_ROW
-    returning
-      value(RV_ROW_INDEX) type I .
-  methods UPDATE_FIRST_VISI_ROW
-    importing
-      !IR_CURRENT_HIT type ref to CL_SALV_STI_TOOLBOX=>YS_HIT
-      !IV_SCROLL_TYPE type STRING .
-  methods DETERMINE_FIRST_HIT .
-  methods DETERMINE_NEXT_HIT
-    importing
-      !IV_RELATIVE_TO_ROW type I optional
-    returning
-      value(RV_START_OVER) type ABAP_BOOL .
-  methods DETERMINE_PREV_HIT
-    importing
-      !IV_RELATIVE_TO_ROW type I optional
-    returning
-      value(RV_START_OVER) type ABAP_BOOL .
-  methods GET_REF_OF_CURRENT_HIT
-    returning
-      value(RR_CURRENT_HIT) type ref to CL_SALV_STI_TOOLBOX=>YS_HIT .
-  methods TRIGGER_SEARCH .
-  methods UPDATE_FRONTEND
-    importing
-      !IR_CURRENT_HIT type ref to CL_SALV_STI_TOOLBOX=>YS_HIT optional
-      !IV_SET_TEXT_MARKERS type ABAP_BOOL .
-  methods CLEAR_FRONT_END .
-  methods GET_TEXT_MARKERS
-    importing
-      !IR_CURRENT_HIT type ref to CL_SALV_STI_TOOLBOX=>YS_HIT
-    exporting
-      !ET_TEXT_MARKERS type WDUI_C_TABLE_TEXT_MARKERS .
-  methods CONFIGURE_COLUMNS
-    importing
-      !IO_COLUMN_CATALOG type ref to IF_SALV_COLUMN_CATALOG .
-  methods UPDATE_MATCHES_STRING .
-  methods CREATE_DYNAMIC_NODE .
-  methods RENDER_SEARCH_AREA .
-  methods GET_NEW_SEARCH_STRING
-    returning
-      value(RV_SEARCH_STRING) type STRING .
-  methods CREATE_MO_RTTI .
-  methods CREATE_HEADER_MENU
-    importing
-      !IV_COLUMN_ID type STRING
-    returning
-      value(RO_MENU) type ref to CL_WD_MENU .
+    CLASS-METHODS get_wd_usage
+      IMPORTING
+        !io_view_api       TYPE REF TO if_wd_view_controller
+      RETURNING
+        VALUE(ro_wd_usage) TYPE REF TO cl_wdr_component_usage .
+    METHODS create_mt_column_mapping .
+    METHODS on_delete
+        FOR EVENT component_deleted OF cl_wdr_component_usage .
+    METHODS get_search_string
+      RETURNING
+        VALUE(rv_search_string) TYPE string .
+    METHODS execute_search .
+    METHODS jump_to_next_hit .
+    METHODS jump_to_prev_hit .
+    METHODS deactivate .
+    METHODS get_search_state
+      RETURNING
+        VALUE(rv_state) TYPE string .
+    METHODS set_search_state
+      IMPORTING
+        !iv_search_state TYPE string .
+    METHODS set_user_changed_data .
+    METHODS get_first_visi_row
+      RETURNING
+        VALUE(rv_row_index) TYPE i .
+    METHODS get_last_visi_row
+      RETURNING
+        VALUE(rv_row_index) TYPE i .
+    METHODS update_first_visi_row
+      IMPORTING
+        !ir_current_hit TYPE REF TO cl_salv_sti_toolbox=>ys_hit
+        !iv_scroll_type TYPE string .
+    METHODS determine_first_hit .
+    METHODS determine_next_hit
+      IMPORTING
+        !iv_relative_to_row  TYPE i OPTIONAL
+      RETURNING
+        VALUE(rv_start_over) TYPE abap_bool .
+    METHODS determine_prev_hit
+      IMPORTING
+        !iv_relative_to_row  TYPE i OPTIONAL
+      RETURNING
+        VALUE(rv_start_over) TYPE abap_bool .
+    METHODS get_ref_of_current_hit
+      RETURNING
+        VALUE(rr_current_hit) TYPE REF TO cl_salv_sti_toolbox=>ys_hit .
+    METHODS trigger_search .
+    METHODS update_frontend
+      IMPORTING
+        !ir_current_hit      TYPE REF TO cl_salv_sti_toolbox=>ys_hit OPTIONAL
+        !iv_set_text_markers TYPE abap_bool .
+    METHODS clear_front_end .
+    METHODS get_text_markers
+      IMPORTING
+        !ir_current_hit  TYPE REF TO cl_salv_sti_toolbox=>ys_hit
+      EXPORTING
+        !et_text_markers TYPE wdui_c_table_text_markers .
+    METHODS configure_columns
+      IMPORTING
+        !io_column_catalog TYPE REF TO if_salv_column_catalog .
+    METHODS update_matches_string .
+    METHODS create_dynamic_node .
+    METHODS render_search_area .
+    METHODS get_new_search_string
+      RETURNING
+        VALUE(rv_search_string) TYPE string .
+    METHODS create_mo_rtti .
+    METHODS create_header_menu
+      IMPORTING
+        !iv_column_id  TYPE string
+      RETURNING
+        VALUE(ro_menu) TYPE REF TO cl_wd_menu .
 ENDCLASS.
 
 
@@ -195,8 +168,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD clear_front_end.
-*CL_FPM_TREE_ASSISTANCE
-
     DATA: lt_text_markers TYPE wdui_c_table_text_markers.
     mo_c_table->set_text_markers( lt_text_markers ).
     mv_update_frontend_necessary = abap_false.
@@ -204,8 +175,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD configure_columns.
-*CL_FPM_TREE_ASSISTANCE
-
     DATA: lt_salv_code_list    TYPE if_salv_service_types=>yt_codelist,
           ls_salv_code_list    LIKE LINE OF lt_salv_code_list,
           lv_salv_col_name     TYPE if_salv_service_types=>y_column_name,
@@ -277,12 +246,8 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
           lo_column_catalog TYPE REF TO if_salv_column_catalog,
           lo_usage          TYPE REF TO cl_wdr_component_usage.
 
-    CHECK: io_c_table IS NOT INITIAL.
-
-    mo_c_table = io_c_table.
-    mo_c_table_context = mo_c_table->get_data_source( ).
-    ms_setup = is_setup.
     mv_search_state = gc_search_state-not_active.
+    mo_c_table = io_c_table.
     mo_view = mo_c_table->view.
     mo_context_root = mo_view->if_wd_controller~get_context( )->root_node.
 
@@ -309,14 +274,10 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
     create_dynamic_node( ).
     render_search_area( ).
-
-    SET HANDLER on_data_source_set.
   ENDMETHOD.
 
 
   METHOD create_dynamic_node.
-*CL_FPM_TREE_RENDERING
-
     " -------------------------------------------------------------------
     " create node DYNAMIC.TABLE_PROPERTIES
     " -------------------------------------------------------------------
@@ -351,15 +312,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
     DATA ls_attribute_info TYPE wdr_context_attribute_info.
 
     " -------------------------------------------------------------------
-    " Attribute for visibility of search popin
-    " -------------------------------------------------------------------
-    ls_attribute_info-name = if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_open.
-    ls_attribute_info-type_name = 'ABAP_BOOL'.              "#EC NOTEXT
-    ls_attribute_info-rtti ?=
-      cl_abap_datadescr=>describe_by_name( 'ABAP_BOOL' ).
-    lo_table_props_node_info->add_attribute( ls_attribute_info ).
-
-    " -------------------------------------------------------------------
     " Attribute for search string
     " -------------------------------------------------------------------
     ls_attribute_info-name = if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_string.
@@ -386,8 +338,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD create_header_menu.
-*CL_FPM_TREE_RENDERING
-
     DATA: lo_header_menu      TYPE REF TO cl_wd_menu,
           lo_view             TYPE REF TO if_wd_view,
           lo_menu_item        TYPE REF TO cl_wd_menu_item,
@@ -417,7 +367,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
       id              = |{ mo_c_table->id }___{ iv_column_id }_MNUAI_FPM_SORT_ASCENDING|
       needs_more_info = abap_false
       on_action       = 'ZWD_C_TABLE_PLUS_SORT'
-      text            = |{ TEXT-r08 }|
+      text            = |{ TEXT-m08 }|
       view            = lo_view
       visible         = abap_true ).
 
@@ -439,7 +389,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
       id              = |{ mo_c_table->id }___{ iv_column_id }_MNUAI_FPM_SORT_DESCENDING|
       needs_more_info = abap_false
       on_action       = 'ZWD_C_TABLE_PLUS_SORT'
-      text            = |{ TEXT-r09 }|
+      text            = |{ TEXT-m09 }|
       view            = lo_view
       visible         = abap_true ).
 
@@ -488,7 +438,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
   METHOD create_mt_column_mapping.
     DATA: lt_column         TYPE cl_wd_abstr_c_table_column=>tt_abstr_c_table_column,
-          lt_column_group   TYPE cl_wd_abstr_c_table_column=>tt_abstr_c_table_column,
           lo_column         TYPE REF TO cl_wd_abstr_c_table_column,
           lo_cell_editor    TYPE REF TO cl_wd_uielement,
           lo_header_menu    TYPE REF TO cl_wd_menu,
@@ -502,11 +451,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
     ENDIF.
 
     lt_column = mo_c_table->get_columns( ).
-    lt_column_group = mo_c_table->get_column_groups( ).
-    IF lt_column_group IS NOT INITIAL.
-      APPEND LINES OF lt_column_group TO lt_column.
-    ENDIF.
-
     LOOP AT lt_column INTO lo_column.
       IF lo_column->_cid EQ cl_wd_c_table_column_group=>cid_c_table_column_group.
         APPEND LINES OF CAST cl_wd_c_table_column_group( lo_column )->get_columns( ) TO lt_column.
@@ -515,12 +459,10 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
       CHECK: lo_column->_cid EQ cl_wd_c_table_column=>cid_c_table_column.
 
       " menu
-      IF ms_setup-sort_off EQ abap_false.
-        lo_header_menu = CAST cl_wd_c_table_column( lo_column )->get_header_menu( ).
-        IF lo_header_menu IS INITIAL.
-          lo_header_menu = create_header_menu( lo_column->id ).
-          CAST cl_wd_c_table_column( lo_column )->set_header_menu( lo_header_menu ).
-        ENDIF.
+      lo_header_menu = CAST cl_wd_c_table_column( lo_column )->get_header_menu( ).
+      IF lo_header_menu IS INITIAL.
+        lo_header_menu = create_header_menu( lo_column->id ).
+        CAST cl_wd_c_table_column( lo_column )->set_header_menu( lo_header_menu ).
       ENDIF.
 
       CLEAR: ls_column_mapping, lv_value_path.
@@ -590,8 +532,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD deactivate.
-*CL_FPM_TREE_ASSISTANCE
-
     mv_search_state = gc_search_state-not_active.
     mv_current_hit_idx = 0.
     mv_user_changed_data = abap_false.
@@ -606,8 +546,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD determine_first_hit.
-*CL_FPM_TREE_ASSISTANCE
-
     DATA: lv_first_visi_row TYPE i.
     FIELD-SYMBOLS: <ty_s_hits>    TYPE cl_salv_sti_toolbox=>ys_hit.
     " first take care of the simple cases
@@ -642,8 +580,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD determine_next_hit.
-*CL_FPM_TREE_ASSISTANCE
-
     DATA: lv_index TYPE i.
     CHECK mv_current_hit_idx <> 0.
     IF lines( mt_toolbox_hits ) = 1.
@@ -679,8 +615,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD determine_prev_hit.
-*CL_FPM_TREE_ASSISTANCE
-
     DATA: lv_index TYPE i.
     CHECK mv_current_hit_idx <> 0.
     IF lines( mt_toolbox_hits ) = 1.
@@ -792,14 +726,11 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
         descending       = lv_sort_descending
     ).
 
-    mv_sort_column_name = lv_sort_column_name.
 
   ENDMETHOD.
 
 
   METHOD execute_search.
-*CL_FPM_TREE_ASSISTANCE
-
     DATA: lr_current_hit TYPE REF TO cl_salv_sti_toolbox=>ys_hit,
           lr_prev_hit    TYPE REF TO cl_salv_sti_toolbox=>ys_hit,
           lv_temp_key    TYPE i,
@@ -944,8 +875,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD get_first_visi_row.
-*CL_FPM_TREE_ASSISTANCE
-
     DATA: lv_first_visi_row TYPE i.
     lv_first_visi_row = mo_c_table->get_first_visible_row( ).
     rv_row_index = lv_first_visi_row.
@@ -957,16 +886,19 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
     READ TABLE gt_instance INTO ls_instance WITH KEY c_table = io_c_table.
     IF sy-subrc <> 0.
-      EXIT.
+      ls_instance-c_table = io_c_table.
+      CREATE OBJECT ls_instance-instance
+        EXPORTING
+          io_c_table = io_c_table.
+      INSERT ls_instance INTO TABLE gt_instance.
     ENDIF.
 
     ro_instance = ls_instance-instance.
+
   ENDMETHOD.
 
 
   METHOD get_last_visi_row.
-*CL_FPM_TREE_ASSISTANCE
-
     DATA: lv_first_visi_row TYPE i,
           visible_row_count TYPE i,
           lv_index          TYPE i.
@@ -978,7 +910,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD get_new_search_string.
-*CL_FPM_TREE_ASSISTANCE
 
     mo_context_root->get_child_node( if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic
 *    )->get_child_node( if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties
@@ -994,8 +925,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD get_ref_of_current_hit.
-*CL_FPM_TREE_ASSISTANCE
-
     FIELD-SYMBOLS: <ty_s_hits> TYPE cl_salv_sti_toolbox=>ys_hit.
     CHECK mv_current_hit_idx > 0.
     READ TABLE mt_toolbox_hits INDEX mv_current_hit_idx ASSIGNING <ty_s_hits>.
@@ -1006,22 +935,16 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD get_search_state.
-*CL_FPM_TREE_ASSISTANCE
-
     rv_state = mv_search_state.
   ENDMETHOD.
 
 
   METHOD get_search_string.
-*CL_FPM_TREE_ASSISTANCE
-
     rv_search_string = mv_search_string.
   ENDMETHOD.
 
 
   METHOD get_text_markers.
-*CL_FPM_TREE_ASSISTANCE
-
     DATA: ls_text_marker TYPE wdui_c_table_text_marker.
     FIELD-SYMBOLS: <ty_s_hits> TYPE cl_salv_sti_toolbox=>ys_hit.
     CLEAR: et_text_markers.
@@ -1041,20 +964,15 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
   METHOD get_wd_usage.
     DATA: ls_wd_usage TYPE ty_s_wd_usage,
-          lo_wdr_view TYPE REF TO cl_wdr_view,
           lv_comp     TYPE string,
           lv_usage    TYPE string,
           lo_f        TYPE REF TO ziwci_wd_c_table_plus.
-
-    lo_wdr_view ?= io_view_api.
 
     READ TABLE gt_wd_usage INTO ls_wd_usage WITH KEY view = io_view_api.
     IF sy-subrc <> 0.
       ls_wd_usage-view = io_view_api.
       lv_comp = 'ZWD_C_TABLE_PLUS'.
-      lv_usage = CAST cl_wdr_view_manager( lo_wdr_view->view_manager )->embedding_view_area.
-      REPLACE ALL OCCURRENCES OF '$' IN lv_usage WITH '_'.
-      lv_usage = io_view_api->name && lv_usage.
+      lv_usage = 'ZWD_C_TABLE_PLUS_' && io_view_api->name.
       ls_wd_usage-usage ?= cl_wdr_runtime_services=>get_component_usage(
                              component            = io_view_api->get_component( )
                              used_component_name  = lv_comp
@@ -1065,19 +983,10 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
       lo_f ?= ls_wd_usage-usage->if_wd_component_usage~get_interface_controller( ).
       lo_f->set_view( io_view_api ).
       DATA(lt_vm) =  wdr_task=>application->get_component_for_id( ls_wd_usage-usage->child_component->id )->view_managers_for_window.
-      DATA(lo_vm) = lt_vm[ name = 'W_MAIN' ]-view_manager.
+      DATA(lo_vm) = lt_vm[ 1 ]-view_manager.
       lo_vm->window_info->set_is_dynamic( abap_true ).
       DATA(lo_v) = lo_vm->get_view( view_usage = lo_vm->window_info->default_root_vusage ).
-      lo_wdr_view->add_action(
-        EXPORTING
-          action  = NEW cl_wdr_action(
-          controller       = lo_v
-          text_key         = 'OPEN_SEARCH'
-          event_handler    = 'ONACTIONOPEN_SEARCH'
-        )
-          command = 'ZWD_C_TABLE_PLUS_OPEN_SEARCH'
-      ).
-      lo_wdr_view->add_action(
+      CAST cl_wdr_view( io_view_api )->add_action(
         EXPORTING
           action  = NEW cl_wdr_action(
           controller       = lo_v
@@ -1086,7 +995,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
         )
           command = 'ZWD_C_TABLE_PLUS_SEARCH_EXECUTE'
       ).
-      lo_wdr_view->add_action(
+      CAST cl_wdr_view( io_view_api )->add_action(
         EXPORTING
           action  = NEW cl_wdr_action(
           controller       = lo_v
@@ -1095,7 +1004,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
         )
           command = 'ZWD_C_TABLE_PLUS_SEARCH_LEFT'
       ).
-      lo_wdr_view->add_action(
+      CAST cl_wdr_view( io_view_api )->add_action(
         EXPORTING
           action  = NEW cl_wdr_action(
           controller       = lo_v
@@ -1104,16 +1013,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
         )
           command = 'ZWD_C_TABLE_PLUS_SEARCH_RIGHT'
       ).
-      lo_wdr_view->add_action(
-        EXPORTING
-          action  = NEW cl_wdr_action(
-          controller       = lo_v
-          text_key         = 'SEARCH_CLOSE'
-          event_handler    = 'ONACTIONSEARCH_CLOSE'
-        )
-          command = 'ZWD_C_TABLE_PLUS_SEARCH_CLOSE'
-      ).
-      lo_wdr_view->add_action(
+      CAST cl_wdr_view( io_view_api )->add_action(
         EXPORTING
           action  = NEW cl_wdr_action(
           controller       = lo_v
@@ -1122,7 +1022,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
         )
           command = 'ZWD_C_TABLE_PLUS_SORT'
       ).
-      lo_wdr_view->add_action(
+      CAST cl_wdr_view( io_view_api )->add_action(
         EXPORTING
           action  = NEW cl_wdr_action(
           controller       = lo_v
@@ -1141,8 +1041,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD jump_to_next_hit.
-*CL_FPM_TREE_ASSISTANCE
-
     CHECK mv_search_state = gc_search_state-active.
     mv_search_state = gc_search_state-jump_to_next.
     mv_update_frontend_necessary = abap_true.
@@ -1150,8 +1048,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD jump_to_prev_hit.
-*CL_FPM_TREE_ASSISTANCE
-
     CHECK mv_search_state = gc_search_state-active.
     mv_search_state = gc_search_state-jump_to_prev.
     mv_update_frontend_necessary = abap_true.
@@ -1173,7 +1069,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD on_do_search.
-*CL_FPM_TREE_ASSISTANCE
     " ----------------------------------------------------------------
     " give the string to the search tool
     " ----------------------------------------------------------------
@@ -1184,7 +1079,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD on_search_jump_to_next_hit.
-*CL_FPM_TREE_ASSISTANCE
 
     IF get_search_state( ) = gc_search_state-active AND
        get_new_search_string( ) = get_search_string( ).
@@ -1203,23 +1097,32 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
   METHOD readme.
 * https://github.com/boy0korea/ZWD_C_TABLE_PLUS
-* copied from CL_FPM_TREE_ASSISTANCE & CL_FPM_TREE_RENDERING
   ENDMETHOD.
 
 
   METHOD render_search_area.
-*CL_FPM_TREE_RENDERING
+* 필요 ACTION 3개.
+*                        on_enter     = 'SEARCH_EXECUTE'
+*method onactionsearch_execute .
+*
+*  wd_assist->on_do_search( ).
+*
+*endmethod.
+*                                  on_action    = 'SEARCH_LEFT'
+*method onactionsearch_left.
+*
+*  wd_assist->on_search_jump_to_next_hit( iv_search_direction_next = abap_false ).
+*
+*endmethod.
+*                                  on_action    = 'SEARCH_RIGHT'
+*method onactionsearch_right.
+*
+*  wd_assist->on_search_jump_to_next_hit( iv_search_direction_next = abap_true ).
+*
+*endmethod.
 
-    DATA: lo_popin        TYPE REF TO cl_wd_popin,
-          lv_path         TYPE string,
-          lv_path_visible TYPE string,
-          lv_table_id     TYPE string,
-          lo_toolbar      TYPE REF TO cl_wd_toolbar.
-
-    IF ms_setup-find_off EQ abap_true AND
-       ms_setup-export_off EQ abap_true.
-      RETURN.
-    ENDIF.
+    DATA: lv_table_id TYPE string,
+          lo_toolbar  TYPE REF TO cl_wd_toolbar.
 
     lv_table_id = mo_c_table->id.
     lo_toolbar = mo_c_table->get_toolbar( ).
@@ -1232,214 +1135,174 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
       mo_c_table->set_toolbar( lo_toolbar ).
     ENDIF.
 
-
-    IF ms_setup-export_off EQ abap_false.
-      " excel export button
-      IF zcl_abap2xlsx_helper=>is_abap2xlsx_installed( iv_with_message = abap_false ) EQ abap_true.
-        DATA lo_export_button TYPE REF TO cl_wd_toolbar_button.
-        cl_wd_toolbar_button=>new_toolbar_button(
-          EXPORTING
-            id                       = lv_table_id && '___EXPORT'
-*            image_source             = if_fpm_constants_internal=>gc_image-export_to_spreadsheet
-            image_source             = '~Icon/ExportToSpreadsheet'
-            on_action                = 'ZWD_C_TABLE_PLUS_EXPORT'
-            tooltip                  = |{ TEXT-r11 }|
-          RECEIVING
-            control                  = lo_export_button
-        ).
-        lo_toolbar->add_toolbar_right_item(
-          index                  = 1
-          the_toolbar_right_item = lo_export_button
-        ).
-      ENDIF.
-    ENDIF.
-
-    IF ms_setup-find_off EQ abap_false.
-      IF 1 EQ 2.
-        " 기존 버튼 방식.
-        DATA(lo_search_button) = cl_wd_toolbar_button=>new_toolbar_button(
-          id           = lv_table_id && `___BTN_FPM_SEARCH` "#EC NOTEXT
-          on_action    = `ZWD_C_TABLE_PLUS_OPEN_SEARCH`     "#EC NOTEXT
-          design       = cl_wd_toolbar_button=>e_design-standard
-          enabled      = abap_true
-          image_first  = abap_true
-*          image_source = if_fpm_constants_internal=>gc_image-search
-          image_source = '~Icon/Search'
-          tooltip      = |{ TEXT-r16 }|
-          hotkey       = cl_wd_link_to_action=>e_hotkey-ctrl_f ).
-        lo_toolbar->add_toolbar_right_item(
-          index                  = 1
-          the_toolbar_right_item = lo_search_button
-        ).
-      ELSE.
-        lv_path  =
-                |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
-*          && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
-          && |{ mo_c_table->id }.|
-          && |{ if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_string }|.
-        lv_path_visible  =
-                |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
-*          && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
-          && |{ mo_c_table->id }.|
-          && |{ if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_open }:NOT|.
-        DATA(lo_open_search_if) = cl_wd_toolbar_input_field=>new_toolbar_input_field(
-          EXPORTING
-            bind_value                  = lv_path
-            bind_visible                = lv_path_visible
-            enabled                     = abap_true
-            id                          = lv_table_id && `___BTN_FPM_SEARCH` "#EC NOTEXT
-            label_text                  = |{ TEXT-r16 }|
-            on_enter                    = `ZWD_C_TABLE_PLUS_OPEN_SEARCH` "#EC NOTEXT
-        ).
-        lo_toolbar->add_toolbar_right_item(
-          index                  = 1
-          the_toolbar_right_item = lo_open_search_if
-        ).
-      ENDIF.
-
-      " create popin
-      lv_path  =
-              |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
-*        && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
-        && |{ mo_c_table->id }.|
-        && |{ if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_open }| .
-      lo_popin = cl_wd_popin=>new_popin( id = lv_table_id && '___POPIN_SEARCH'
-                                         has_content_padding = abap_false
-                                         bind_visible = lv_path ).
-      lo_toolbar->set_toolbar_popin( the_toolbar_popin = lo_popin ).
-
-      DATA lo_lc TYPE REF TO cl_wd_layout_container.
-      lo_lc ?= cl_wd_layout_container=>new_layout_container( width = '100%' ).
-      cl_wd_matrix_layout=>new_matrix_layout( EXPORTING container = lo_lc
-                                             stretched_horizontally = abap_true
-                                             stretched_vertically   = abap_false ).
-      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lc ).
-      lo_popin->set_content( EXPORTING the_content = lo_lc  ).
+*    DATA(lo_search_button) = cl_wd_toolbar_button=>new_toolbar_button(
+*      id           = `BTN_FPM_SEARCH`                       "#EC NOTEXT
+*      on_action    = `OPEN_SEARCH`                          "#EC NOTEXT
+*      design       = cl_wd_toolbar_button=>e_design-standard
+*      enabled      = abap_true
+*      image_first  = abap_true
+*      image_source = `~Icon/Log`                            "#EC NOTEXT
+*      tooltip      = |{ text-S16 }|
+*      hotkey       = cl_wd_link_to_action=>e_hotkey-ctrl_f ).
+*    lo_toolbar->add_toolbar_right_item( lo_search_button ).
 
 
-      DATA lo_tc TYPE REF TO cl_wd_transparent_container.
-      lo_tc ?= cl_wd_transparent_container=>new_transparent_container( width = '100%' ).
-      cl_wd_flow_layout=>new_flow_layout( EXPORTING container = lo_tc
-                                          wrapping = abap_true ).
 
-      cl_wd_matrix_head_data=>new_matrix_head_data( EXPORTING element = lo_tc
-                                      h_align = cl_wd_matrix_head_data=>e_h_align-end_of_line
-                                      v_align = cl_wd_matrix_head_data=>e_v_align-top   ).
+    " create popin
+    DATA: lo_popin        TYPE REF TO cl_wd_popin,
+          lv_path         TYPE string,
+          lv_path_visible TYPE string.
+*    lv_path  =
+*            |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
+**      && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
+*      && |{ mo_c_table->id }.|
+*      && |{ if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_open }| .
+    lo_popin = cl_wd_popin=>new_popin( id = lv_table_id && '___POPIN_SEARCH'
+                                       has_content_padding = abap_false ).
+*                                       bind_visible = lv_path ).
+    lo_toolbar->set_toolbar_popin( the_toolbar_popin = lo_popin ).
 
-      lo_lc->add_child( lo_tc ).
+    DATA lo_lc TYPE REF TO cl_wd_layout_container.
+    lo_lc ?= cl_wd_layout_container=>new_layout_container( width = '100%' ).
+    cl_wd_matrix_layout=>new_matrix_layout( EXPORTING container = lo_lc
+                                           stretched_horizontally = abap_true
+                                           stretched_vertically   = abap_false ).
+    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lc ).
+    lo_popin->set_content( EXPORTING the_content = lo_lc  ).
 
-      lv_path  =
-              |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
-*        && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
-        && |{ mo_c_table->id }.|
-        && |{ if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_string }|.
-      DATA lo_label TYPE REF TO cl_wd_label.
-      lo_label ?= cl_wd_label=>new_label(
-*                          id           = 'FPM_SEARCH_STRING_LABEL'
-                          editable     = abap_false
-                          text         = |{ TEXT-r12 }|
-                          label_for    = lv_table_id && '___SEARCH_STRING'
-                          wrapping     = abap_true ).
-      DATA lo_inp_field TYPE REF TO cl_wd_input_field.
-      lo_inp_field ?= cl_wd_input_field=>new_input_field(
-                          id           = lv_table_id && '___SEARCH_STRING'
-                          bind_value = lv_path
-                          input_help = '03' "search
-                          " input_prompt = |{ text-r12 }|
-                          on_enter     = 'ZWD_C_TABLE_PLUS_SEARCH_EXECUTE'
-                          width        = '12em' ).
 
-      DATA lo_txt_field TYPE REF TO cl_wd_text_view.
-      lv_path  = |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
-*              && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
-              && |{ mo_c_table->id }.|
-              && |{ if_fpm_list_types=>cs_list_attribute_internal-search_text_matches }|.
-      lv_path_visible  = |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
-*              && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
-              && |{ mo_c_table->id }.|
-              && |{ if_fpm_list_types=>cs_list_attribute_internal-search_text_matches_visible }|.
-      lo_txt_field ?= cl_wd_text_view=>new_text_view(
-                                                      id           = lv_table_id && '___SEARCH_MATCHES'
-                                                      bind_visible = lv_path_visible
-                                                      bind_text    = lv_path
-                                                      wrapping     = abap_false ).
+    DATA lo_tc TYPE REF TO cl_wd_transparent_container.
+    lo_tc ?= cl_wd_transparent_container=>new_transparent_container( width = '100%' ).
+    cl_wd_flow_layout=>new_flow_layout( EXPORTING container = lo_tc
+                                        wrapping = abap_true ).
 
-      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_inp_field
-                                                cell_design = cl_wd_flow_data=>e_cell_design-l_pad ).
-      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_label
-                                               cell_design = cl_wd_flow_data=>e_cell_design-l_pad
-                                               v_gutter = cl_wd_matrix_data=>e_v_gutter-medium ).
-      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_txt_field
-                                               cell_design = cl_wd_flow_data=>e_cell_design-l_pad ).
+    cl_wd_matrix_head_data=>new_matrix_head_data( EXPORTING element = lo_tc
+                                    h_align = cl_wd_matrix_head_data=>e_h_align-end_of_line
+                                    v_align = cl_wd_matrix_head_data=>e_v_align-top   ).
 
-      lo_tc->add_child( lo_txt_field ).
-      lo_tc->add_child( lo_label ).
-      lo_tc->add_child( lo_inp_field ).
+    lo_lc->add_child( lo_tc ).
 
-      DATA lo_btn_tc TYPE REF TO cl_wd_transparent_container.
-      lo_btn_tc ?= cl_wd_transparent_container=>new_transparent_container(  ).
-      cl_wd_flow_layout=>new_flow_layout( EXPORTING container = lo_btn_tc
-                                                    wrapping = abap_true ).
-*      IF mo_config_data->get_table_settings( )-allow_search NE 'X' AND
-*         mo_config_data->get_table_settings( )-allow_search NE 'Y'.
-      DATA lo_lnk_tc TYPE REF TO cl_wd_link_to_action.
-      lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
-                                    id           = lv_table_id && '___SEARCH_LEFT'
-*                                    image_source = if_fpm_constants_internal=>gc_image-move_up
-                                    image_source = '~Icon/MoveUp'
-                                    tooltip      = |{ TEXT-r13 }|
-                                    on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_LEFT'
-                                    hotkey       = cl_wd_link_to_action=>e_hotkey-alt_arrow_up ).
-      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lnk_tc
-                                     cell_design = cl_wd_flow_data=>e_cell_design-l_pad ).
-      lo_tc->add_child( lo_lnk_tc ).
+    lv_path  =
+            |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
+*      && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
+      && |{ mo_c_table->id }.|
+      && |{ if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_string }|.
+    DATA lo_label TYPE REF TO cl_wd_label.
+    lo_label ?= cl_wd_label=>new_label(
+*                        id           = 'FPM_SEARCH_STRING_LABEL'
+                        editable     = abap_false
+                        text         = |{ TEXT-s12 }|
+                        label_for    = lv_table_id && '___SEARCH_STRING'
+                        wrapping     = abap_true ).
+    DATA lo_inp_field TYPE REF TO cl_wd_input_field.
+    lo_inp_field ?= cl_wd_input_field=>new_input_field(
+                        id           = lv_table_id && '___SEARCH_STRING'
+                        bind_value = lv_path
+                        input_help = '03' "search
+                        " input_prompt = |{ text-S12 }|
+                        on_enter     = 'ZWD_C_TABLE_PLUS_SEARCH_EXECUTE'
+                        width        = '12em' ).
 
-      lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
-                                    id           = lv_table_id && '___SEARCH_RIGHT'
-*                                    image_source = if_fpm_constants_internal=>gc_image-move_down
-                                    image_source = '~Icon/MoveDown'
-                                    tooltip      = |{ TEXT-r14 }|
-                                    on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_RIGHT'
-                                    hotkey       = cl_wd_link_to_action=>e_hotkey-alt_arrow_down ).
-      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lnk_tc
+    DATA lo_txt_field TYPE REF TO cl_wd_text_view.
+    lv_path  = |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
+*            && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
+            && |{ mo_c_table->id }.|
+            && |{ if_fpm_list_types=>cs_list_attribute_internal-search_text_matches }|.
+    lv_path_visible  = |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
+*            && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }.|
+            && |{ mo_c_table->id }.|
+            && |{ if_fpm_list_types=>cs_list_attribute_internal-search_text_matches_visible }|.
+    lo_txt_field ?= cl_wd_text_view=>new_text_view(
+                                                    id           = lv_table_id && '___SEARCH_MATCHES'
+                                                    bind_visible = lv_path_visible
+                                                    bind_text    = lv_path
+                                                    wrapping     = abap_false ).
+
+    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_inp_field
+                                              cell_design = cl_wd_flow_data=>e_cell_design-l_pad ).
+    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_label
+                                             cell_design = cl_wd_flow_data=>e_cell_design-l_pad
+                                             v_gutter = cl_wd_matrix_data=>e_v_gutter-medium ).
+    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_txt_field
+                                             cell_design = cl_wd_flow_data=>e_cell_design-l_pad ).
+
+    lo_tc->add_child( lo_txt_field ).
+    lo_tc->add_child( lo_label ).
+    lo_tc->add_child( lo_inp_field ).
+
+    DATA lo_btn_tc TYPE REF TO cl_wd_transparent_container.
+    lo_btn_tc ?= cl_wd_transparent_container=>new_transparent_container(  ).
+    cl_wd_flow_layout=>new_flow_layout( EXPORTING container = lo_btn_tc
+                                                  wrapping = abap_true ).
+*    IF mo_config_data->get_table_settings( )-allow_search NE 'X' AND
+*       mo_config_data->get_table_settings( )-allow_search NE 'Y'.
+    DATA lo_lnk_tc TYPE REF TO cl_wd_link_to_action.
+    lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
+                                  id           = lv_table_id && '___SEARCH_LEFT'
+                                  image_source = '~Icon/MoveUp'
+                                  tooltip      = |{ TEXT-s13 }|
+                                  on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_LEFT'
+                                  hotkey       = cl_wd_link_to_action=>e_hotkey-alt_arrow_up ).
+    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lnk_tc
+                                   cell_design = cl_wd_flow_data=>e_cell_design-l_pad ).
+    lo_tc->add_child( lo_lnk_tc ).
+
+    lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
+                                  id           = lv_table_id && '___SEARCH_RIGHT'
+                                  image_source = '~Icon/MoveDown'
+                                  tooltip      = |{ TEXT-s14 }|
+                                  on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_RIGHT'
+                                  hotkey       = cl_wd_link_to_action=>e_hotkey-alt_arrow_down ).
+    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lnk_tc
+                                  cell_design = cl_wd_flow_data=>e_cell_design-l_pad ).
+    lo_tc->add_child( lo_lnk_tc ).
+*    ENDIF.
+
+*    lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
+*                                  id           = 'FPM_SEARCH_CLOSE'
+*                                  image_source = '~Icon/Cancel'
+*                                  tooltip      = |{ text-S15 }|
+*                                  on_action    = 'SEARCH_CLOSE'
+*                                  hotkey       =  cl_wd_link_to_action=>e_hotkey-ctrl_shift_f ).  " '70'   ).   " ctrl-shift-f  "cl_wd_link_to_action=>e_hotkey-ctrl_shift_f
+*    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lnk_tc
+*                                    cell_design = cl_wd_flow_data=>e_cell_design-l_pad  ).
+*    cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_btn_tc
+*                                    cell_design = cl_wd_flow_data=>e_cell_design-l_pad  ).
+*    lo_tc->add_child( lo_lnk_tc ).
+
+
+    " excel export button
+    IF zcl_abap2xlsx_helper=>is_abap2xlsx_installed( iv_with_message = abap_false ) EQ abap_true.
+      DATA lo_export_button TYPE REF TO cl_wd_button.
+      cl_wd_button=>new_button(
+        EXPORTING
+          id                       = lv_table_id && '___EXPORT'
+          image_source             = '~Icon/SpreadsheetFile'
+          on_action                = 'ZWD_C_TABLE_PLUS_EXPORT'
+          tooltip                  = |{ TEXT-m11 }|
+        RECEIVING
+          control                  = lo_export_button
+      ).
+      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_export_button
                                     cell_design = cl_wd_flow_data=>e_cell_design-l_pad ).
-      lo_tc->add_child( lo_lnk_tc ).
-*      ENDIF.
-
-      lo_lnk_tc ?= cl_wd_link_to_action=>new_link_to_action(
-                                    id           = lv_table_id && '___SEARCH_CLOSE'
-*                                    image_source = if_fpm_constants_internal=>gc_image-cancel
-                                    image_source = '~Icon/Cancel'
-                                    tooltip      = |{ TEXT-r15 }|
-                                    on_action    = 'ZWD_C_TABLE_PLUS_SEARCH_CLOSE'
-                                    hotkey       =  cl_wd_link_to_action=>e_hotkey-ctrl_shift_f ).  " '70'   ).   " ctrl-shift-f  "cl_wd_link_to_action=>e_hotkey-ctrl_shift_f
-      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_lnk_tc
-                                      cell_design = cl_wd_flow_data=>e_cell_design-l_pad  ).
-      cl_wd_flow_data=>new_flow_data( EXPORTING element = lo_btn_tc
-                                      cell_design = cl_wd_flow_data=>e_cell_design-l_pad  ).
-      lo_tc->add_child( lo_lnk_tc ).
+      lo_tc->add_child( lo_export_button ).
     ENDIF.
+
 
   ENDMETHOD.
 
 
   METHOD set_search_state.
-*CL_FPM_TREE_ASSISTANCE
-
     mv_search_state = iv_search_state.
   ENDMETHOD.
 
 
   METHOD set_user_changed_data.
-*CL_FPM_TREE_ASSISTANCE
-
     mv_user_changed_data = abap_true.
   ENDMETHOD.
 
 
   METHOD trigger_search.
-*CL_FPM_TREE_ASSISTANCE
-
     " call ats toolbox
     DATA: ls_column_mapping TYPE ty_s_column_mapping,
           lo_table_type     TYPE REF TO cl_abap_tabledescr,
@@ -1499,8 +1362,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD update_first_visi_row.
-*CL_FPM_TREE_ASSISTANCE
-
     DATA: lv_last_visi_row           TYPE i,
           lv_first_visi_row          TYPE i,
           lv_frontend_idx_of_current TYPE i,
@@ -1544,8 +1405,7 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
         ENDIF.
         IF ir_current_hit->row > lv_last_visi_row.
           " scrolling is necessary
-*          lv_new_first_visi_row = ir_current_hit->row - mo_c_table->get_visible_row_count( ) + 1.
-          lv_new_first_visi_row = ir_current_hit->row - mo_c_table->get_visible_row_count( ) + 2.   " popin 열어서 한줄 더 필요함.
+          lv_new_first_visi_row = ir_current_hit->row - mo_c_table->get_visible_row_count( ) + 1.
           mo_c_table->set_first_visible_row( value = lv_new_first_visi_row ).
         ENDIF.
     ENDCASE.
@@ -1553,8 +1413,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD update_frontend.
-*CL_FPM_TREE_ASSISTANCE
-
     DATA: lv_index TYPE i.
 
     " take care of focus
@@ -1578,7 +1436,6 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD update_matches_string.
-*CL_FPM_TREE_ASSISTANCE
 
     DATA: lo_nd           TYPE REF TO if_wd_context_node,
           lo_el           TYPE REF TO if_wd_context_element,
@@ -1631,115 +1488,15 @@ CLASS ZCL_WD_C_TABLE_PLUS IMPLEMENTATION.
 
 
   METHOD upgrade_c_table.
-* WDDOMODIFYVIEW 에서 호출하세요.
-    DATA: lo_c_table TYPE REF TO cl_wd_c_table.
-
     get_wd_usage( io_view_api ).
 
     IF io_c_table IS NOT INITIAL.
-      create_instance(
-        EXPORTING
-          io_c_table  = io_c_table
-          is_setup    = is_setup
-      ).
+      get_instance( io_c_table ).
     ELSE.
       DATA(lt_uiel) = CAST cl_wdr_view( io_view_api )->get_elements_by_cid( cl_wd_c_table=>cid_c_table ).
       LOOP AT lt_uiel INTO DATA(lo_uiel).
-        lo_c_table = CAST cl_wd_c_table( lo_uiel ).
-        create_instance(
-          EXPORTING
-            io_c_table  = lo_c_table
-            is_setup    = is_setup
-        ).
+        get_instance( CAST cl_wd_c_table( lo_uiel ) ).
       ENDLOOP.
     ENDIF.
-  ENDMETHOD.
-
-
-  METHOD on_open_search.
-*CL_FPM_TREE_RENDERING
-*  method set_search_state.
-
-*    check mo_config_data->get_table_settings( )-allow_search is not initial.
-
-*    ms_search_settings-open_search = iv_search_open.
-    DATA lv_node_path TYPE string.
-    lv_node_path = |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
-*      && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }|.
-      && |{ mo_c_table->id }|.
-
-    DATA lo_node TYPE REF TO if_wd_context_node.
-    lo_node = mo_context_root->path_get_node( lv_node_path ).
-
-    DATA lo_element TYPE REF TO if_wd_context_element.
-    lo_element = lo_node->get_element( ).
-    lo_element->set_attribute( name = if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_open
-                               value = abap_true ).
-
-*  endmethod.
-
-    on_do_search( ).
-  ENDMETHOD.
-
-
-  METHOD ON_SEARCH_CLOSE.
-*CL_FPM_TREE_RENDERING
-
-    DATA lv_node_path TYPE string.
-    lv_node_path = |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic }.|
-*      && |{ if_fpm_guibb_constants=>gc_guibb_list_nodes-table_properties }|.
-      && |{ mo_c_table->id }|.
-
-    DATA lo_node TYPE REF TO if_wd_context_node.
-    lo_node = mo_context_root->path_get_node( lv_node_path ).
-
-    DATA lo_element TYPE REF TO if_wd_context_element.
-    lo_element = lo_node->get_element( ).
-    lo_element->set_attribute( name = if_fpm_guibb_constants=>gc_guibb_tree_attributes-search_open
-                               value = abap_false ).
-
-    deactivate( ).
-
-  ENDMETHOD.
-
-
-  METHOD ON_DATA_SOURCE_SET.
-* 검색 버튼을 눌러서 테이블 내용이 변경되는 경우 정렬표시를 제거함.
-    CHECK: node EQ mo_c_table_context.
-    on_search_close( ).
-    IF mv_sort_column_name IS NOT INITIAL.
-      CAST cl_wd_c_table_column( mo_c_table->get_column( id = mv_sort_column_name ) )->set_sort_state( value = cl_wd_c_table_column=>e_sort_state-none ).
-      CLEAR: mv_sort_column_name.
-    ENDIF.
-  ENDMETHOD.
-
-
-  METHOD create_instance.
-    DATA: ls_instance TYPE ty_s_instance.
-
-    READ TABLE gt_instance INTO ls_instance WITH KEY c_table = io_c_table.
-    IF sy-subrc EQ 0.
-      DELETE gt_instance WHERE c_table = io_c_table.
-      ls_instance-instance->mo_context_root->get_child_node( if_fpm_guibb_constants=>gc_guibb_list_nodes-dynamic )->get_node_info( )->remove_child_node( io_c_table->id ).
-      DATA(lo_tb) = io_c_table->get_toolbar( ).
-      DATA(lt_tb_item) = lo_tb->get_toolbar_right_items( ).
-      LOOP AT lt_tb_item INTO DATA(lo_tb_item).
-        DATA(lo_el) = CAST cl_wd_uielement( lo_tb_item ).
-        IF lo_el->id CP |{ io_c_table->id }___*|.
-          lo_tb->remove_toolbar_right_item( id = lo_el->id ).
-        ENDIF.
-      ENDLOOP.
-      DATA lo_popin TYPE REF TO cl_wd_popin.
-      lo_tb->set_toolbar_popin( the_toolbar_popin = lo_popin ).
-    ENDIF.
-
-    ls_instance-c_table = io_c_table.
-    CREATE OBJECT ls_instance-instance
-      EXPORTING
-        io_c_table = io_c_table
-        is_setup   = is_setup.
-    INSERT ls_instance INTO TABLE gt_instance.
-    ro_instance = ls_instance-instance.
-
   ENDMETHOD.
 ENDCLASS.
